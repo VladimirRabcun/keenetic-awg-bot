@@ -1,0 +1,6 @@
+*.conf
+!*.conf.example
+__pycache__/
+*.pyc
+monitor.json
+*.log

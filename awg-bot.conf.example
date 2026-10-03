@@ -1,0 +1,14 @@
+# Plain KEY=VALUE, no shell evaluation or quotes. Never commit real secrets.
+BOT_TOKEN=REPLACE_WITH_BOTFATHER_TOKEN
+ADMIN_ID=123456789
+ALLOWED_IDS=
+AWGM_URL=http://127.0.0.1:2222
+AWGM_API_KEY=REPLACE_WITH_AWGM_API_KEY
+# HTTPS public origin routed to backend root. Empty: bot only.
+WEBAPP_URL=
+WEBAPP_HOST=127.0.0.1
+WEBAPP_PORT=8787
+MONITOR_INTERVAL=60
+INIT_DATA_MAX_AGE=3600
+STATE_DIR=/opt/var/lib/awg-bot
+ALLOW_REMOTE_HTTP=false

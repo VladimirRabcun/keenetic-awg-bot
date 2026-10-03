@@ -1,0 +1,22 @@
+# Include in your nginx http {} context. Use your real domain/certificates.
+# Backend stays loopback; expose ONLY this TLS virtual host.
+limit_req_zone $binary_remote_addr zone=awg_bot:1m rate=3r/s;
+server {
+    listen 443 ssl;
+    server_name vpn.example.com;
+    ssl_certificate /opt/etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /opt/etc/nginx/certs/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    client_max_body_size 8k;
+    client_header_timeout 10s;
+    client_body_timeout 10s;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    location / {
+        limit_req zone=awg_bot burst=10 nodelay;
+        proxy_pass http://127.0.0.1:8787;
+        proxy_set_header Host $host;
+        proxy_set_header Authorization $http_authorization;
+        proxy_read_timeout 75s;
+        access_log off;
+    }
+}

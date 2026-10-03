@@ -1,0 +1,44 @@
+#!/bin/sh
+PATH=/opt/bin:/opt/sbin:/usr/bin:/bin
+export PATH
+APP=/opt/awg-bot
+PID=/opt/var/run/awg-bot.pid
+LOG=/opt/var/log/awg-bot.log
+alive() {
+    [ -f "$PID" ] || return 1
+    pid=$(cat "$PID")
+    case "$pid" in ''|*[!0-9]*) return 1;; esac
+    kill -0 "$pid" 2>/dev/null || return 1
+    [ -r "/proc/$pid/cmdline" ] || return 1
+    tr '\000' ' ' < "/proc/$pid/cmdline" | grep -F "$APP/run.py" >/dev/null
+}
+start() {
+    alive && { echo 'awg-bot already running'; return 0; }
+    umask 077
+    mkdir -p /opt/var/run /opt/var/log /opt/var/lib/awg-bot
+    [ -f /opt/etc/awg-bot.conf ] || { echo 'Missing /opt/etc/awg-bot.conf'; return 1; }
+    /opt/bin/python3 "$APP/run.py" --config /opt/etc/awg-bot.conf --check || return 1
+    [ ! -f "$LOG" ] || mv "$LOG" "$LOG.1"
+    nohup /opt/bin/python3 -u "$APP/run.py" --config /opt/etc/awg-bot.conf >>"$LOG" 2>&1 </dev/null &
+    echo $! > "$PID"
+    sleep 2
+    alive || { echo 'Start failed; check log'; rm -f "$PID"; return 1; }
+    echo 'awg-bot started'
+}
+stop() {
+    if alive; then
+        kill "$pid"
+        count=0
+        while alive && [ "$count" -lt 15 ]; do sleep 1; count=$((count + 1)); done
+        alive && { echo 'Still stopping; retry later'; return 1; }
+    fi
+    rm -f "$PID"
+    echo 'awg-bot stopped'
+}
+case "$1" in
+start) start;;
+stop) stop;;
+restart) stop && start;;
+status) alive && echo 'running' || { echo 'stopped'; exit 1; };;
+*) echo "Usage: $0 {start|stop|restart|status}"; exit 1;;
+esac
