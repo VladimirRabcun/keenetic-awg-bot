@@ -1,7 +1,6 @@
 #!/opt/bin/python3
 """Download a pinned GitHub snapshot and install it on Entware."""
 import io
-import json
 import os
 from pathlib import Path
 import re
@@ -11,7 +10,8 @@ import urllib.request
 import zipfile
 
 REPOSITORY = 'VladimirRabcun/keenetic-awg-bot'
-BRANCH = 'main'
+# Known tested application snapshot; update this when promoting a new version.
+INSTALL_COMMIT = '35e7921f17088329ad496ea4832cf80c84e4cd81'
 
 def download(url, limit):
     request = urllib.request.Request(url, headers={'User-Agent': 'keenetic-awg-bot-installer', 'Accept': 'application/vnd.github+json'})
@@ -45,9 +45,8 @@ def main():
     if Path('/opt/awg-bot/run.py').exists():
         raise ValueError('Already installed. Use the update procedure in README; config is preserved')
     os.umask(0o077)
-    # Resolve main once, then download that immutable commit rather than a moving branch.
-    metadata = json.loads(download(f'https://api.github.com/repos/{REPOSITORY}/commits/{BRANCH}', 2 * 1024 * 1024))
-    sha = metadata.get('sha', '')
+    # No anonymous GitHub API request: its shared-IP quota can be exhausted.
+    sha = INSTALL_COMMIT
     if not re.fullmatch(r'[0-9a-f]{40}', sha):
         raise ValueError('Cannot resolve repository commit')
     print('Installing commit ' + sha)
