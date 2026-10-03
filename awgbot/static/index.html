@@ -1,5 +1,32 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AWG Manager</title><link rel="stylesheet" href="/style.css"><script src="https://telegram.org/js/telegram-web-app.js"></script><script defer src="/app.js"></script></head>
-<body><header><span>KEENETIC / VPN</span><h1>AWG Manager</h1><p>Туннели и состояние подключения</p></header>
-<nav><button data-view="tunnels">Туннели</button><button data-view="wan">WAN</button><button data-view="tools">Инструменты</button></nav>
-<p id="status" role="status"></p><main id="main"></main><footer><button id="refresh">↻ Обновить</button><small>Обновление каждые 15 секунд</small></footer></body></html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <title>AWG Manager</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <span class="brand-icon" aria-hidden="true">◈</span>
+    <div class="brand"><b>AWG Manager</b><span>Keenetic · VPN-панель</span></div>
+    <div class="top-actions">
+      <button id="theme" class="icon-button" aria-label="Переключить тему" title="Переключить тему">◐</button>
+      <button id="refresh" class="icon-button" aria-label="Обновить" title="Обновить">↻</button>
+    </div>
+  </header>
+  <div class="shell">
+    <p id="status" role="status" aria-live="polite">Подключение к панели…</p>
+    <main id="main" aria-busy="true"></main>
+    <footer><span class="live-dot"></span><small id="updated">Обновление каждые 15 секунд</small></footer>
+  </div>
+  <nav aria-label="Разделы панели">
+    <button data-view="tunnels"><span aria-hidden="true">◈</span>Туннели</button>
+    <button data-view="wan"><span aria-hidden="true">◎</span>WAN</button>
+    <button data-view="tools"><span aria-hidden="true">⚙</span>Инструменты</button>
+  </nav>
+</body>
+</html>
