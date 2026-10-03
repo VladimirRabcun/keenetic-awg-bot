@@ -4,7 +4,16 @@ import getpass
 import os
 from pathlib import Path
 import subprocess
+from contextlib import contextmanager
 from awgbot.config import Config
+
+@contextmanager
+def open_terminal(path='/dev/tty'):
+    # Buffered r+ requires seekability; terminals are non-seekable devices.
+    with open(path, 'r', encoding='utf-8') as reader, open(path, 'w', encoding='utf-8') as writer:
+        if not reader.isatty() or not writer.isatty():
+            raise OSError('Interactive terminal required')
+        yield reader, writer
 
 def write_config(path, values):
     if any('\n' in v or '\r' in v for v in values.values()):
@@ -28,11 +37,11 @@ def write_config(path, values):
 def main():
     os.umask(0o077)
     print('Setup AWG Bot. BOT_TOKEN and API key will not be displayed.')
-    with open('/dev/tty', 'r+') as terminal:
+    with open_terminal() as (terminal_input, terminal):
         def ask(prompt, default=''):
             terminal.write(prompt + (f' [{default}]' if default else '') + ': ')
             terminal.flush()
-            value = terminal.readline()
+            value = terminal_input.readline()
             if not value:
                 raise ValueError('Terminal input closed')
             return value.strip() or default
@@ -58,6 +67,9 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except Exception:
-        print('Setup failed. Check values and permissions; use /opt/etc/awg-bot.conf for manual setup.')
+    except Exception as exc:
+        # Exception type/errno are safe to print; values or secret-bearing text are not.
+        print('Setup failed: ' + type(exc).__name__ +
+              (' errno=' + str(exc.errno) if isinstance(exc, OSError) and exc.errno is not None else '') +
+              '. Use an interactive SSH terminal and check config values/permissions.')
         raise SystemExit(1)

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import zipfile
 from bootstrap import extract_snapshot
-from configure import write_config
+from configure import write_config, open_terminal
 
 def archive(name, text='file'):
     out = io.BytesIO()
@@ -18,6 +18,22 @@ def archive(name, text='file'):
     return raw
 
 class InstallerTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == 'posix', 'POSIX terminal regression test')
+    def test_nonseekable_terminal_opens_with_separate_streams(self):
+        import pty
+        master, slave = pty.openpty()
+        try:
+            with open_terminal(os.ttyname(slave)) as (reader, writer):
+                self.assertFalse(reader.seekable())
+                self.assertFalse(writer.seekable())
+                writer.write('prompt: ')
+                writer.flush()
+                self.assertIn(b'prompt:', os.read(master, 64))
+                os.write(master, b'answer\n')
+                self.assertEqual(reader.readline(), 'answer\n')
+        finally:
+            os.close(master)
+            os.close(slave)
     def test_snapshot_extracts(self):
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as tmp:
             root = extract_snapshot(archive('repo-commit/run.py'), Path(tmp))
