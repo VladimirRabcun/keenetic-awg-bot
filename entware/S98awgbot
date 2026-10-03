@@ -19,8 +19,19 @@ start() {
     [ -f /opt/etc/awg-bot.conf ] || { echo 'Missing /opt/etc/awg-bot.conf'; return 1; }
     /opt/bin/python3 "$APP/run.py" --config /opt/etc/awg-bot.conf --check || return 1
     [ ! -f "$LOG" ] || mv "$LOG" "$LOG.1"
-    nohup /opt/bin/python3 -u "$APP/run.py" --config /opt/etc/awg-bot.conf >>"$LOG" 2>&1 </dev/null &
-    echo $! > "$PID"
+    # Entware/BusyBox builds may not provide nohup. Detach using Python instead.
+    /opt/bin/python3 - "$APP" "$LOG" "$PID" <<'PY' || return 1
+import os
+import subprocess
+import sys
+app, log, pidfile = sys.argv[1:]
+with open(log, 'ab', buffering=0) as output, open(os.devnull, 'rb') as source:
+    process = subprocess.Popen(
+        ['/opt/bin/python3', '-u', app + '/run.py', '--config', '/opt/etc/awg-bot.conf'],
+        stdin=source, stdout=output, stderr=output, start_new_session=True, close_fds=True)
+with open(pidfile, 'w') as output:
+    output.write(str(process.pid) + '\n')
+PY
     sleep 2
     alive || { echo 'Start failed; check log'; rm -f "$PID"; return 1; }
     echo 'awg-bot started'
