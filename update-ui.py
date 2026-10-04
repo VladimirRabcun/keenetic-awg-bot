@@ -9,11 +9,11 @@ import tempfile
 import time
 from urllib.request import urlopen
 
-COMMIT = 'deba590ff23c7233a3619cd84080953cd29ecd39'
+COMMIT = '9605aa1fea3f63ecf5ebe379d117ed0b15ef2906'
 HASHES = {
-    'index.html': 'f902c2e12a85863f55ebb65c64f142671c2e22f038768f7f4b32ad29ade33b3b',
-    'style.css': 'f623d052b409195dd6be1ba899071a3531448ed68311a13f6775412037199d86',
-    'app.js': 'd27459ae51b84f49c99a5f171fc5c9930f1fd959ac2714a03c6513c9b155e347',
+    'index.html': '45da31ce70ff0e749629a0a678e3b7cd7f168531d1b03ee4748e0e9bdd45afff',
+    'style.css': '418cedcf65bb0bd66d1e4da3172687b3aeb6ba295cb0dec0ea0b056d68aad2f7',
+    'app.js': '9b407adb254947cf28e20d25ee2f9efe7c0210bbd41311fdf70a9de7587a4234',
 }
 
 def main():
