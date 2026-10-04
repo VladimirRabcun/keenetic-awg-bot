@@ -60,3 +60,9 @@ All server IDs must be listed WireguardN; public keys must match a listed client
 ## Bot update API (our backend, not AWGM)
 
 Authenticated POST /api: bot-info (version, admin), bot-update-check, bot-update-status, bot-update-start (commit from checked release, confirmed=true). Only ADMIN_ID may call bot-update-*; whitelisted additional users receive HTTP 403. Worker downloads fixed files from the trusted repository, validates hashes/compilation, backs up existing files and rolls back, including removing newly added files if startup fails. The detached worker retains a POSIX file lock through service restart.
+
+### Серверные backup и sing-box (v2.19.12)
+
+GET `/api/managed/export` возвращает backup типа `awg-manager-managed-server-backup`, version 1, managedServers. POST `/api/managed/import` принимает тот же type/version/managedServers и options.allowRenumber; outcomes описывает частичные результаты. Доступ из Mini App ограничен ADMIN_ID и явным подтверждением.
+
+GET/PUT `/api/singbox/router/settings`: меняется только выбранная запись ingressInterfaces (`managed:WireguardN` или `iface:WireguardN`), остальные значения сохраняются. Это общие настройки маршрутизатора; операции сериализованы клиентом API.

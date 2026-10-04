@@ -6,7 +6,7 @@ class Panel:
         self.api, self.monitor = api, monitor
 
     def dispatch(self, op, data):
-        if op.startswith('peer-') or op in ('server-create', 'server-edit', 'server-delete', 'server-nat', 'server-policy', 'server-endpoint', 'server-lan', 'server-asc', 'server-suggest', 'server-policies', 'server-lans'):
+        if op.startswith('peer-') or op in ('server-create', 'server-edit', 'server-delete', 'server-nat', 'server-policy', 'server-endpoint', 'server-lan', 'server-asc', 'server-suggest', 'server-policies', 'server-lans', 'server-export', 'server-import', 'server-ingress'):
             return Servers(self.api).dispatch(op, data)
         if op == 'health':
             return redact(self.api.call('/health'))

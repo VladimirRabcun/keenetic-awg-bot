@@ -71,12 +71,16 @@ def make_server(config, panel):
                 if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                     raise ValueError()
                 n = int(self.headers.get('Content-Length', '0'))
-                if not 0 < n <= 8192:
+                if not 0 < n <= 1024 * 1024:
                     raise ValueError()
                 data = json.loads(self.rfile.read(n))
                 if not isinstance(data, dict) or not isinstance(data.get('op'), str):
                     raise ValueError()
                 op = data['op']
+                if n > 8192 and op != 'server-import':
+                    raise ValueError()
+                if op in ('server-export', 'server-import') and uid != config.admin:
+                    raise PermissionError('Резервные копии доступны только администратору')
                 if op == 'bot-info':
                     result = {'version': VERSION, 'admin': uid == config.admin}
                 elif op.startswith('bot-update-'):

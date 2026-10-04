@@ -44,11 +44,40 @@ class Servers:
         if op in reads:
             return redact(self.api.call(reads[op]))
         with self.api.lock:
+            if op == 'server-export':
+                self.confirm(data)
+                result = self.api.call('/managed/export')
+                if not isinstance(result, dict) or result.get('type') != 'awg-manager-managed-server-backup':
+                    raise APIError('Некорректная резервная копия')
+                return result  # Explicit administrator export, contains private keys.
+            if op == 'server-import':
+                self.confirm(data)
+                backup = data.get('backup')
+                if not isinstance(backup, dict) or backup.get('type') != 'awg-manager-managed-server-backup' or type(backup.get('version')) is not int or backup['version'] != 1 or not isinstance(backup.get('managedServers'), list) or not 1 <= len(backup['managedServers']) <= 128 or any(not isinstance(s, dict) for s in backup['managedServers']):
+                    raise APIError('Выберите резервную копию серверов AWGM версии 1')
+                options = payload(data.get('options', {'allowRenumber': False}), {'allowRenumber': bool})
+                result = self.api.call('/managed/import', 'POST', body={'type': backup['type'], 'version': 1, 'managedServers': backup['managedServers'], 'options': options})
+                return {'outcomes': [dict(name=o.get('name'), newName=o.get('newName'), action=o.get('action'), addedPeers=o.get('addedPeers'), error=bool(o.get('error')), conflicts=o.get('conflicts', [])) for o in result.get('outcomes', [])]}
             if op == 'server-create':
                 body = self.server_fields(data.get('values'), True)
                 return redact(self.api.call('/managed-servers', 'POST', body=body))
             row = self.find(str(data.get('id', '')))
             base = self.base(row)
+            if op == 'server-ingress':
+                settings = self.api.call('/singbox/router/settings')
+                refs = settings.get('ingressInterfaces', []) if isinstance(settings, dict) else None
+                if not isinstance(refs, list) or any(not isinstance(r, str) for r in refs):
+                    raise APIError('Неожиданный формат настроек sing-box')
+                ref = ('managed:' if row['kind'] == 'managed' else 'iface:') + row['id']
+                if 'values' not in data:
+                    return {'enabled': ref in refs}
+                body = payload(data['values'], {'enabled': bool})
+                if 'enabled' not in body:
+                    raise APIError('Укажите enabled')
+                self.confirm(data)
+                next_refs = list(dict.fromkeys(refs + [ref])) if body['enabled'] else [r for r in refs if r != ref]
+                self.api.call('/singbox/router/settings', 'PUT', body={**settings, 'ingressInterfaces': next_refs})
+                return {'enabled': body['enabled']}
             if op == 'server-edit':
                 if row['kind'] != 'managed':
                     raise APIError('Параметры системного интерфейса меняются в Keenetic; здесь доступны endpoint, NAT, политика и клиенты')

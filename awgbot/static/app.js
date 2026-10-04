@@ -391,7 +391,7 @@ async function operate(fn) {
   let error='';
   try {await fn();S.updated=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});}
   catch(e){error=e.message;if(!root.querySelector('.card,.ecard,.sgrid,.grid,.search,h1'))root.replaceChildren(h('div',{class:'card empty'},h('b',{},'Не удалось подключиться'),h('span',{},error),btn('refresh-cw','Повторить',load)));}
-  finally{S.busy=false;root.setAttribute('aria-busy','false');document.querySelectorAll('#app button,#bar button').forEach(node=>node.disabled=false);connection(error);}
+  finally{S.busy=false;root.setAttribute('aria-busy','false');document.querySelectorAll('#app button,#bar button').forEach(node=>node.disabled=node.dataset.disabled==='true');connection(error);}
 }
 function drawBar() {
   const sub=S.view!=='home';document.body.classList.toggle('has-bar',sub);
@@ -535,32 +535,73 @@ api('bot-info').then(data=>{S.botVersion=data.version;S.admin=data.admin;if(S.vi
 setInterval(()=>{if(!document.hidden&&!S.busy&&!sheetState&&['home','tunnels','wan','servers'].includes(S.view))operate(load);},15000);
 
 async function renderServers() {
-  const rows=await api('servers');
-  root.replaceChildren(h('h1',{},'Серверы',pill(rows.length)));
-  root.append(btn('plus','Создать сервер',createServer,'btn-primary'));
-  if(!rows.length){root.append(h('div',{class:'card empty'},'Серверов пока нет'));return;}
-  for(const server of rows) {
-    const peers=server.peers||[], online=peers.filter(p=>p.online===true).length;
-    const card=h('article',{class:'ecard '+(server.status==='up'?'ok':'off')},
-      h('div',{class:'head'},h('span',{class:'dot '+(server.status==='up'?'ok':'off')}),h('span',{class:'name'},server.description||server.id),pill(server.status==='up'?'работает':server.status==='down'?'остановлен':'нет данных',server.status==='up'?'ok':'')),
-      h('div',{class:'meta'},tag(server.kind==='managed'?'AWGM':'Keenetic','accent'),tag(server.id),server.listenPort?tag('UDP '+server.listenPort):null),
-      h('div',{class:'line'},server.address||'—'),
-      h('div',{class:'line'},'Клиенты онлайн: '+(!peers.length?0:peers.some(p=>typeof p.online==='boolean')?online:'—')+'/'+peers.length),
-      h('div',{class:'acts'},btn('play','Старт',()=>serverAction(server,'start')),btn('square','Стоп',()=>serverAction(server,'stop'),'bad'),btn('refresh-cw','Рестарт',()=>serverAction(server,'restart'))),
-    );
-    card.append(h('div',{class:'pair'},btn('settings','Настроить',()=>serverSettings(server)),btn('user-plus','Добавить клиента',()=>peerForm(server))));
-    const details=h('details',{class:'card'},h('summary',{},'Клиенты · '+peers.length));
-    if(!peers.length)details.append(h('p',{class:'hint'},'Клиентов пока нет'));
-    for(const peer of peers)details.append(h('div',{class:'card'},h('h3',{},peer.description||'Клиент'),
-      kv('Состояние',peer.online===true?'Онлайн':peer.online===false?'Офлайн':'Нет данных'),
-      kv('Адрес',peer.tunnelIP||(peer.allowedIPs||[]).join(', ')||'—'),
-      kv('Получено',bytes(peer.rxBytes)),kv('Отправлено',bytes(peer.txBytes)),kv('Handshake',peer.lastHandshake||'—'),
-      h('div',{class:'pair'},btn('pencil','Изменить',()=>peerForm(server,peer)),
-        typeof peer.enabled==='boolean'?btn(peer.enabled?'pause':'play',peer.enabled?'Отключить':'Включить',()=>peerChange(server,peer,'peer-toggle',{values:{enabled:!peer.enabled}})):null),
-      h('div',{class:'pair'},peer.confAvailable!==false?btn('file-down','Конфиг',()=>peerConf(server,peer)):null,btn('trash-2','Удалить',()=>peerChange(server,peer,'peer-delete',{confirmed:true}),'bad'))));
-    card.append(details);root.append(card);
+  const focus=document.activeElement?.id==='client-search'?{start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;
+  const rows=await api('servers');S.servers=rows;
+  const server=rows.find(s=>s.id===S.selectedServer)||rows[0];S.selectedServer=server?.id;
+  let policies=[],lans=[],ingress=null;
+  if(server){const results=await Promise.allSettled([api('server-policies'),api('server-lans'),api('server-ingress',{id:server.id})]);
+    if(results[0].status==='fulfilled')policies=results[0].value;
+    if(results[1].status==='fulfilled')lans=results[1].value;
+    if(results[2].status==='fulfilled')ingress=results[2].value;
   }
+  root.replaceChildren(h('h1',{},'Серверы'));
+  root.append(h('div',{class:'pair server-toolbar'},btn('download','Экспорт',exportServers),btn('upload','Импорт',importServers)),btn('plus','Создать сервер',createServer,'server-create'));
+  if(!server){root.append(h('div',{class:'card empty'},'Серверов пока нет'));return;}
+  const select=h('select',{class:'server-picker','aria-label':'Выбрать сервер',onchange:event=>{S.selectedServer=event.target.value;S.clientQuery='';operate(renderServers);}},rows.map(s=>h('option',{value:s.id},(s.status==='up'?'● ':'○ ')+(s.description||s.id))));select.value=server.id;root.append(select);
+  const peers=server.peers||[],on=server.status==='up',known=['up','down'].includes(server.status);
+  const online=peers.filter(p=>p.online===true).length,measured=peers.filter(p=>p.rxBytes!=null&&p.txBytes!=null);
+  const sum=key=>measured.length?bytes(measured.reduce((n,p)=>n+Number(p[key]||0),0)):'—';
+  const card=h('article',{class:'server-main '+(on?'running':'')},
+    h('div',{class:'server-heading'},switchButton(on,()=>serverAction(server,on?'stop':'start'),'Включить сервер',!known),h('h2',{},server.description||server.id),tag(server.kind==='managed'?'Управляемый':'Keenetic','accent')),
+    h('p',{class:'server-meta'},server.id+' '+(server.address||'—')+'/'+maskPrefix(server.mask)+' :'+(server.listenPort||'—')+'  MTU '+(server.mtu||'—')),
+    h('div',{class:'server-actions'},btn('refresh-cw','Рестарт',()=>serverAction(server,'restart')),server.kind==='managed'?btn('shield','Обфускация',()=>ascForm(server)):null,
+      btn('settings','Настройки',()=>server.kind==='managed'?formSheet('Параметры сервера',SERVER_FIELDS(server),values=>api('server-edit',{id:server.id,values})):serverSettings(server)),server.kind==='managed'?btn('trash-2','Удалить',()=>deleteServer(server),'bad'):null),
+    h('div',{class:'server-stats'},[[sum('rxBytes'),'RX'],[sum('txBytes'),'TX'],[online+' / '+peers.length,'КЛИЕНТЫ'],['UDP :'+(server.listenPort||'—'),'LISTEN']].map(([value,label])=>h('div',{},h('b',{},value),h('span',{},label)))),
+  );
+  const access=h('details',{class:'server-access'});access.open=S.accessOpen!==false;access.addEventListener('toggle',()=>{S.accessOpen=access.open;});
+  access.append(h('summary',{},'НАСТРОЙКИ ДОСТУПА'),h('div',{class:'server-setting'},h('h3',{},'NAT'),h('p',{},'Полный — подмена адреса в интернете и LAN. Интернет — подмена только при выходе в интернет. Без NAT — исходный адрес клиента.'),
+    h('div',{class:'seg nat-seg'},[['full','Полный'],['internet-only','Интернет'],['none','Без NAT']].map(([mode,label])=>btn(null,label,async()=>{if(!confirm('Изменить NAT сервера на «'+label+'»?'))return;await api('server-nat',{id:server.id,values:{mode}});await renderServers();},server.natModeKnown!==false&&server.natMode===mode?'on':''))),
+    server.natModeKnown===false?h('p',{class:'hint'},'Текущий режим NAT неизвестен'):null));
+  if(server.kind==='managed')access.append(h('div',{class:'server-setting'},h('h3',{},'Доступ в LAN'),h('p',{},'Сегменты LAN, доступные клиентам этого сервера.'),
+    h('div',{class:'lan-chips'},(server.lanSegments||[]).length?(server.lanSegments||[]).map(name=>tag(lans.find(l=>l.name===name)?.label||name)):tag('Не выбрано'),btn('plus','',()=>lanForm(server),'lan-add',{'aria-label':'Выбрать LAN-сегменты'})),
+    server.foreignAcls?.length?h('p',{class:'hint'},'На интерфейсе есть другие ACL: '+server.foreignAcls.join(', ')):null));
+  access.append(h('div',{class:'server-setting'},h('div',{class:'ingress-row'},h('div',{},h('h3',{},'Маршрутизация через sing-box'),h('p',{},'Весь трафик клиентов пойдёт через sing-box и его правила. В FakeIP DNS перехватывается, нагрузка выше и ping клиентов не работает. При остановке sing-box клиенты останутся без сети.')),ingress?switchButton(ingress.enabled,async()=>{if(!confirm((ingress.enabled?'Выключить':'Включить')+' маршрутизацию клиентов через sing-box?'))return;await api('server-ingress',{id:server.id,values:{enabled:!ingress.enabled},confirmed:true});await renderServers();},'Маршрутизация через sing-box'):null),
+    ingress===null?h('p',{class:'hint'},'Настройки sing-box недоступны через API'):null));
+  const policy=h('select',{'aria-label':'Политика доступа',onchange:event=>operate(async()=>{if(!confirm('Изменить политику доступа для всех клиентов сервера?')){await renderServers();return;}await api('server-policy',{id:server.id,values:{policy:event.target.value}});await renderServers();})},h('option',{value:'none'},'Политика по умолчанию'),policies.map(p=>h('option',{value:p.id},p.description||p.id)));
+  if(server.policyKnown===false){policy.append(h('option',{value:'unknown'},'Текущая политика неизвестна'));policy.value='unknown';}
+  else if(server.policy&&server.policy!=='none'&&!policies.some(p=>p.id===server.policy)){policy.append(h('option',{value:server.policy},server.policy+' (отсутствует)'));policy.value=server.policy;}
+  else policy.value=server.policy||'none';
+  access.append(h('div',{class:'server-setting'},h('h3',{},'Политика доступа'),h('p',{},'Регулирует выход в интернет для всех клиентов сервера.'),policy));card.append(access);
+  card.append(h('section',{class:'server-clients'},h('h3',{},'Клиенты ('+online+'/'+peers.length+' онлайн)'),
+    h('div',{class:'pair'},h('input',{id:'client-search',type:'search',placeholder:'Поиск…','aria-label':'Поиск клиента',value:S.clientQuery||'',oninput:event=>{S.clientQuery=event.target.value;drawServerPeers(server);}}),btn('plus','Добавить клиента',()=>peerForm(server))),
+    h('div',{class:'client-sort'},h('select',{'aria-label':'Сортировка клиентов',onchange:event=>{S.clientSort=event.target.value;drawServerPeers(server);}},[['handshake','Handshake'],['name','Название'],['traffic','Трафик'],['ip','IP-адрес']].map(([value,label])=>h('option',{value},label))),btn('arrow-up','',()=>{S.clientDescending=!S.clientDescending;drawServerPeers(server);},'',{'aria-label':'Изменить направление сортировки'})),h('div',{id:'server-peer-list'})));
+  root.append(card);root.querySelector('[aria-label="Сортировка клиентов"]').value=S.clientSort||'handshake';drawServerPeers(server);
+  if(focus){const input=document.getElementById('client-search');input.focus();input.setSelectionRange(focus.start,focus.end);}
 }
+function switchButton(on,fn,label,disabled=false){return btn(null,'',fn,'switch'+(on?' on':''),{role:'switch','aria-checked':String(Boolean(on)),'aria-label':label,disabled:disabled||null,'data-disabled':String(disabled)});}
+function maskPrefix(mask){if(!mask)return '—';if(/^\d+$/.test(String(mask)))return mask;return String(mask).split('.').map(x=>Number(x).toString(2)).join('').split('1').length-1;}
+function handshakeSeconds(value){if(value==null||value==='')return null;const stamp=Date.parse(value);return Number.isFinite(stamp)?Math.max(0,(Date.now()-stamp)/1000):null;}
+function handshakeLabel(value){const seconds=handshakeSeconds(value);if(seconds===null)return value||'Нет handshake';if(seconds<60)return Math.floor(seconds)+' с назад';if(seconds<3600)return Math.floor(seconds/60)+' мин назад';if(seconds<86400)return Math.floor(seconds/3600)+' ч назад';return Math.floor(seconds/86400)+' д назад';}
+function drawServerPeers(server){
+  const list=document.getElementById('server-peer-list');if(!list)return;
+  const rows=(server.peers||[]).filter(p=>[p.description,p.tunnelIP,p.endpoint,...(p.allowedIPs||[])].filter(Boolean).join(' ').toLocaleLowerCase().includes((S.clientQuery||'').toLocaleLowerCase()));
+  const mode=S.clientSort||'handshake',direction=S.clientDescending?-1:1;
+  rows.sort((a,b)=>direction*(mode==='name'?(a.description||'').localeCompare(b.description||''):mode==='ip'?(a.tunnelIP||'').localeCompare(b.tunnelIP||'',undefined,{numeric:true}):mode==='traffic'?(Number(b.rxBytes||0)+Number(b.txBytes||0))-(Number(a.rxBytes||0)+Number(a.txBytes||0)):(handshakeSeconds(a.lastHandshake)??Infinity)-(handshakeSeconds(b.lastHandshake)??Infinity)));
+  list.replaceChildren(...rows.map(peer=>h('article',{class:'server-peer'},h('div',{class:'peer-head'},typeof peer.enabled==='boolean'?switchButton(peer.enabled,()=>peerChange(server,peer,'peer-toggle',{values:{enabled:!peer.enabled}}),'Включить клиента '+(peer.description||'')):null,
+    h('div',{class:'peer-title'},h('b',{},peer.description||'Клиент'),h('span',{class:peer.online?'online':'offline'},peer.online===true?'● ONLINE':peer.online===false?'○ OFFLINE':'○ НЕТ ДАННЫХ')),
+    h('div',{class:'peer-buttons'},peer.confAvailable!==false?btn('download','',()=>peerConf(server,peer),'',{'aria-label':'Конфиг '+(peer.description||'клиента')}):null,btn('pencil','',()=>peerForm(server,peer),'',{'aria-label':'Изменить '+(peer.description||'клиента')}),btn('trash-2','',()=>peerChange(server,peer,'peer-delete',{confirmed:true}),'bad',{'aria-label':'Удалить '+(peer.description||'клиента')}))),
+    h('div',{class:'peer-metrics'},h('div',{},handshakeLabel(peer.lastHandshake)),h('div',{},'IP '+(peer.tunnelIP||(peer.allowedIPs||[]).join(', ')||'—')+'  EP '+(peer.endpoint||'—')),h('div',{},'RX: '+bytes(peer.rxBytes)+'  TX: '+bytes(peer.txBytes))))));
+  if(!rows.length)list.append(h('p',{class:'hint'},'Клиенты не найдены'));
+}
+async function deleteServer(server){if(!confirm('Удалить сервер «'+(server.description||server.id)+'» и всех его клиентов? Отменить это действие нельзя.'))return;await api('server-delete',{id:server.id,confirmed:true});await renderServers();}
+function downloadText(text,name,type='text/plain'){const url=URL.createObjectURL(new Blob([text],{type}));const link=h('a',{href:url,download:name});document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+async function exportServers(){if(!confirm('Экспортировать все серверы AWGM? Резервная копия содержит приватные ключи.'))return;const backup=await api('server-export',{confirmed:true});openSheet('Экспорт серверов',box=>box.append(h('p',{class:'hint'},'Резервная копия содержит '+backup.managedServers.length+' серверов AWGM. Храните файл как пароль.'),...(backup.warnings||[]).map(w=>h('p',{class:'hint'},w.message||'Неполная резервная копия')),h('button',{class:'btn-primary',onclick:()=>downloadText(JSON.stringify(backup,null,2),'awgm-servers.json','application/json')},'Скачать резервную копию')));}
+function importServers(){openSheet('Импорт серверов',box=>{
+  const file=h('input',{type:'file',accept:'.json,application/json','aria-label':'Резервная копия серверов'}),names=h('p',{class:'hint'}),error=h('p',{class:'hint error',role:'alert'}),renumber=h('input',{type:'checkbox','aria-label':'Разрешить перенумерацию интерфейсов'});let backup=null;
+  file.addEventListener('change',async()=>{backup=null;error.textContent='';try{const selected=file.files[0];if(!selected)return;if(selected.size>900000)throw Error('Максимальный размер файла — 900 КБ');const value=JSON.parse(await selected.text());if(value.type!=='awg-manager-managed-server-backup'||value.version!==1||!Array.isArray(value.managedServers)||!value.managedServers.length)throw Error('Нужна резервная копия серверов AWGM');backup=value;names.textContent='Серверы: '+value.managedServers.map(s=>s.description||s.interfaceName).join(', ');}catch(e){error.textContent=e.message;}});
+  const submit=h('button',{class:'btn-primary',onclick:async()=>{if(submit.disabled)return;error.textContent='';if(!backup){error.textContent='Выберите резервную копию';return;}if(!confirm('Импортировать '+backup.managedServers.length+' серверов? Будут восстановлены серверы, клиенты и их ключи.'))return;submit.disabled=true;try{const result=await api('server-import',{backup,options:{allowRenumber:renumber.checked},confirmed:true});closeSheet();await operate(()=>openResult('Результат импорта',async()=>result));}catch(e){error.textContent=e.message;submit.disabled=false;}}},'Импортировать');
+  box.append(h('p',{class:'hint'},'Восстановление серверов AWGM из JSON. При конфликтах API вернёт результат для каждого сервера.'),file,names,h('label',{},renumber,' Разрешить перенумерацию интерфейсов при конфликте'),error,submit);
+});}
 
 // Forms preserve AWGM values; secrets are fetched only for explicit client export.
 function formSheet(title,fields,submit,hint='') {
