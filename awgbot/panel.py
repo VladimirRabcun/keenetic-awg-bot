@@ -5,6 +5,12 @@ class Panel:
         self.api, self.monitor = api, monitor
 
     def dispatch(self, op, data):
+        if op == 'health':
+            return redact(self.api.call('/health'))
+        if op == 'servers':
+            return self.api.servers()
+        if op == 'server-action':
+            return self.api.server_action(str(data.get('id', '')), data.get('action'))
         if op == 'tunnels':
             return redact(self.api.tunnels())
         if op == 'tunnel':

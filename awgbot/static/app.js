@@ -229,6 +229,7 @@ const root = document.getElementById('app');
 const S = {view:'home', tunnels:[], busy:false, query:'', filter:'all', result:null, resultTitle:'', resultLoader:null, returnView:'home', updated:''};
 const SECTIONS = [
   ['network','Туннели','tunnels','профили, управление VPN'],
+  ['server','Серверы','servers','WireGuard, клиенты, трафик'],
   ['globe','WAN','wan','внешние подключения'],
   ['server','Система','system','версия, время работы'],
   ['stethoscope','Диагностика','tools','проверки, отчёты'],
@@ -281,7 +282,7 @@ function drawTop() {
   const dark = document.documentElement.dataset.theme === 'dark';
   document.getElementById('top').replaceChildren(
     h('button',{class:'logo','aria-label':'Главная',title:'Главная',onclick:()=>go('home')},logo()),
-    h('button',{class:'ver',onclick:()=>go('home'),'aria-label':'AWG Manager · главная'},h('b',{},'AWG Manager'),h('span',{},'Keenetic')),
+    h('button',{class:'ver',onclick:()=>go('home'),'aria-label':'AWG Manager · главная'},h('b',{},'AWG Manager'),h('span',{},S.version ? 'v'+S.version.replace(/^v/,'') : 'версия —')),
     h('div',{class:'sp'}),
     h('button',{'aria-label':'Вид панели',title:'Вид панели',onclick:lookSheet},icon('a-large-small')),
     h('button',{'aria-label':'День / ночь',title:dark?'Светлая тема':'Тёмная тема',onclick:()=>{const next=dark?'light':'dark';setPref('theme',next);applyTheme(next);drawTop();}},icon(dark?'sun':'moon')),
@@ -516,6 +517,7 @@ async function load() {
   else if(S.view==='system'){const data=await api('system');resultBody('Система',data);}
   else if(S.view==='logs'){const data=await api('logs');resultBody('Логи',data);}
   else if(S.view==='monitor')await renderMonitor();
+  else if(S.view==='servers')await renderServers();
   else if(S.view==='tools')renderTools();
   else if(S.view==='result'&&S.resultLoader){S.result=await S.resultLoader();renderResult();}
   drawBar();
@@ -525,4 +527,35 @@ applyTheme(pref('theme','')||autoTheme());applyLook();drawTop();drawBar();
 tg?.onEvent?.('themeChanged',()=>{if(!pref('theme','')){applyTheme(autoTheme());drawTop();}});
 tg?.BackButton?.onClick?.(()=>go(S.view==='result'?S.returnView:'home'));
 operate(load);
-setInterval(()=>{if(!document.hidden&&!S.busy&&!sheetState&&['home','tunnels','wan'].includes(S.view))operate(load);},15000);
+api('health').then(data=>{S.version=typeof data?.version==='string'?data.version:'';drawTop();}).catch(()=>{});
+setInterval(()=>{if(!document.hidden&&!S.busy&&!sheetState&&['home','tunnels','wan','servers'].includes(S.view))operate(load);},15000);
+
+async function renderServers() {
+  const rows=await api('servers');
+  root.replaceChildren(h('h1',{},'Серверы',pill(rows.length)));
+  if(!rows.length){root.append(h('div',{class:'card empty'},'Серверов пока нет'));return;}
+  for(const server of rows) {
+    const peers=server.peers||[], online=peers.filter(p=>p.online===true).length;
+    const card=h('article',{class:'ecard '+(server.status==='up'?'ok':'off')},
+      h('div',{class:'head'},h('span',{class:'dot '+(server.status==='up'?'ok':'off')}),h('span',{class:'name'},server.description||server.id),pill(server.status==='up'?'работает':server.status==='down'?'остановлен':'нет данных',server.status==='up'?'ok':'')),
+      h('div',{class:'meta'},tag(server.kind==='managed'?'AWGM':'Keenetic','accent'),tag(server.id),server.listenPort?tag('UDP '+server.listenPort):null),
+      h('div',{class:'line'},server.address||'—'),
+      h('div',{class:'line'},'Клиенты онлайн: '+online+'/'+peers.length),
+      h('div',{class:'acts'},btn('play','Старт',()=>serverAction(server,'start')),btn('square','Стоп',()=>serverAction(server,'stop'),'bad'),btn('refresh-cw','Рестарт',()=>serverAction(server,'restart'))),
+    );
+    const details=h('details',{class:'card'},h('summary',{},'Клиенты · '+peers.length));
+    if(!peers.length)details.append(h('p',{class:'hint'},'Клиентов пока нет'));
+    for(const peer of peers)details.append(h('div',{class:'card'},h('h3',{},peer.description||'Клиент'),
+      kv('Состояние',peer.online===true?'Онлайн':peer.online===false?'Офлайн':'Нет данных'),
+      kv('Адрес',peer.tunnelIP||(peer.allowedIPs||[]).join(', ')||'—'),
+      kv('Получено',bytes(peer.rxBytes)),kv('Отправлено',bytes(peer.txBytes)),kv('Handshake',peer.lastHandshake||'—')));
+    card.append(details);root.append(card);
+  }
+}
+async function serverAction(server,action) {
+  const label={start:'Включить',stop:'Остановить',restart:'Перезапустить'}[action];
+  if(!confirm(label+' сервер «'+(server.description||server.id)+'»?'+(action==='start'?'':' Подключённые клиенты могут потерять связь.')))return;
+  const result=await api('server-action',{id:server.id,action});
+  await renderServers();
+  if(result?.accepted)root.prepend(h('p',{class:'hint',role:'status'},'Перезапуск принят. Статус обновится автоматически.'));
+}
