@@ -2615,8 +2615,9 @@ function drawTop() {
     h('button',{'aria-label':'Вид панели',title:'Вид панели',onclick:lookSheet},icon('a-large-small')),
     h('button',{'aria-label':'День / ночь',title:dark?'Светлая тема':'Тёмная тема',onclick:()=>{const next=dark?'light':'dark';setPref('theme',next);applyTheme(next);drawTop();}},icon(dark?'sun':'moon')),
     h('button',{'aria-label':'О проекте',title:'О проекте',onclick:aboutSheet},icon('heart')),
-    h('button',{'aria-label':'Меню',title:'Разделы',onclick:menuSheet},icon('menu')),
+    h('button',{id:'menu-toggle','aria-label':S.menuOpen?'Закрыть меню':'Открыть меню','aria-expanded':String(Boolean(S.menuOpen)),'aria-controls':'main-menu',title:S.menuOpen?'Закрыть меню':'Разделы',onclick:menuSheet},icon(S.menuOpen?'x':'menu')),
   );
+  if(S.menuOpen)drawMenu();
 }
 let sheetState = null;
 function closeSheet() {
@@ -2628,6 +2629,7 @@ function closeSheet() {
   if (previous.trigger?.isConnected) previous.trigger.focus();
 }
 function openSheet(title, draw) {
+  closeMenu();
   closeSheet();
   const trigger = document.activeElement;
   const box = h('section',{class:'sheet',role:'dialog','aria-modal':'true','aria-label':title});
@@ -2679,17 +2681,26 @@ function lookSheet() {
 function menuItem(ic,label,sub,fn) {
   return h('button',{class:'item',onclick:fn},h('span',{class:'ibox'},icon(ic)),h('span',{class:'main'},h('span',{class:'title'},label),sub?h('span',{class:'sub wrap'},sub):null),h('span',{class:'side'},icon('chevron-right')));
 }
-function menuSheet() {
-  openSheet('Разделы',box=>box.append(
-    h('div',{class:'card list'},
-      menuItem('house','Главная','сводка и разделы',()=>go('home')),
-      SECTIONS.map(([ic,title,path,sub])=>menuItem(ic,title,sub,()=>go(path))),
-    ),
-    h('button',{onclick:()=>{closeSheet();operate(load);}},icon('refresh-cw'),'Обновить данные'),
-    h('button',{onclick:lookSheet},icon('a-large-small'),'Вид панели'),
-    h('button',{class:'close-sheet',onclick:()=>{closeSheet();tg?.close?.();}},icon('message-square-text'),'Вернуться в Telegram'),
-  ));
+function closeMenu(focus=false){
+  if(!S.menuOpen)return;
+  S.menuOpen=false;document.getElementById('main-menu')?.remove();document.getElementById('menu-backdrop')?.remove();
+  root.inert=false;document.getElementById('bar').inert=false;drawTop();
+  if(focus)document.getElementById('menu-toggle')?.focus();
 }
+function drawMenu(){
+  const current=S.view==='bot-update'?'settings':S.view==='router-settings'?'routing':S.view;
+  const nav=h('nav',{id:'main-menu','aria-label':'Разделы'});
+  for(const[title,path]of [['Главная','home'],...SECTIONS.map(([,title,path])=>[title,path])])nav.append(h('button',{class:current===path?'selected':null,'aria-current':current===path?'page':null,onclick:()=>go(path)},title));
+  if(tg?.close)nav.append(h('button',{class:'menu-exit',onclick:()=>{closeMenu();tg.close();}},'Выйти'));
+  document.getElementById('top').append(nav);
+  if(!document.getElementById('menu-backdrop'))document.body.append(h('div',{id:'menu-backdrop','aria-hidden':'true',onclick:()=>closeMenu(true)}));
+}
+function menuSheet(){
+  if(S.menuOpen){closeMenu(true);return;}
+  closeSheet();S.menuOpen=true;drawTop();root.inert=true;document.getElementById('bar').inert=true;
+  document.querySelector('#main-menu button[aria-current]')?.focus();
+}
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&S.menuOpen){event.preventDefault();closeMenu(true);}});
 function aboutSheet() {
   openSheet('О проекте',box=>box.append(
     h('p',{class:'hint'},'Telegram-панель AWG Manager для Keenetic. Интерфейс AWG Toolza адаптирован под API роутера.'),
@@ -2726,7 +2737,7 @@ function drawBar() {
   if(sub)tg?.BackButton?.show?.();else tg?.BackButton?.hide?.();
 }
 async function navigate(view) {S.view=view;root.replaceChildren(h('div',{class:'spin'},'Загрузка…'));drawBar();await load();window.scrollTo(0,0);}
-function go(view) {if(S.busy)return;closeSheet();operate(()=>navigate(view));}
+function go(view) {if(S.busy)return;closeMenu();closeSheet();operate(()=>navigate(view));}
 function amount(tunnel) {
   const rx=Number(tunnel.rxBytes),tx=Number(tunnel.txBytes);
   if(tunnel.rxBytes==null || tunnel.txBytes==null || !Number.isFinite(rx) || !Number.isFinite(tx))return null;
@@ -2861,7 +2872,7 @@ tg?.BackButton?.onClick?.(()=>go(S.view==='result'?S.returnView:'home'));
 operate(load);
 api('health').then(data=>{S.version=typeof data?.version==='string'?data.version:'';drawTop();}).catch(()=>{});
 api('bot-info').then(data=>{S.botVersion=data.version;S.admin=data.admin;if(S.view==='settings')operate(renderManagerSettings);}).catch(()=>{});
-setInterval(()=>{if(!document.hidden&&!S.busy&&!sheetState&&['home','tunnels','wan','servers'].includes(S.view))operate(load);},15000);
+setInterval(()=>{if(!document.hidden&&!S.busy&&!sheetState&&!S.menuOpen&&['home','tunnels','wan','servers'].includes(S.view))operate(load);},15000);
 
 async function renderServers() {
   const focus=document.activeElement?.id==='client-search'?{start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;

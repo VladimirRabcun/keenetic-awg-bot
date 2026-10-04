@@ -428,3 +428,11 @@ html[data-theme=dark] .server-main { --server-panel:#24283d; --accent:#86a9f9; -
 
 button.switch{min-width:46px;min-height:28px;padding:0;}
 .routing-tabs{scrollbar-width:none;}.routing-tabs::-webkit-scrollbar{display:none;}
+
+/* Navigation unfolds directly from the header. */
+#main-menu{position:absolute;top:100%;left:0;right:0;display:flex;flex-direction:column;background:var(--card);border-bottom:1px solid var(--border);max-height:calc(100dvh - 52px);overflow-y:auto;box-shadow:0 12px 24px #0002;}
+.top #main-menu button{display:block;width:100%;text-align:left;border-radius:0;border:0;border-left:3px solid transparent;padding:16px 20px;min-height:48px;color:var(--text);font-size:15px;font-weight:400;background:none;}
+.top #main-menu button.selected{border-left-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
+.top #main-menu button:hover,.top #main-menu button:focus-visible{background:var(--soft);}
+.top #main-menu button.menu-exit{color:var(--bad);}
+#menu-backdrop{position:fixed;inset:0;background:#0006;z-index:7;}
