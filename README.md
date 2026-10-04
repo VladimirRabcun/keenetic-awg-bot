@@ -105,3 +105,10 @@ cd /opt/tmp/keenetic-awg-bot
 `config.py` — конфиг, `access.py` — initData, `awgm.py` — REST-клиент, `panel.py` — общий диспетчер, `bot.py` — Telegram polling/меню, `monitor.py` — уведомления, `webapp.py` — ограниченный HTTP backend, `static/` — Mini App. Polling, мониторинг и web-сервер работают в отдельных потоках; управление туннелями сериализовано. До 8 одновременных web-запросов, тело до 8 KiB, ответ AWGM до 2 MiB.
 
 Документированные контракты и источники: [docs/API.md](docs/API.md). Лицензия собственного кода: MIT.
+
+
+### Серверы и версия AWGM
+
+Mini App показывает версию из GET /api/health. Раздел «Серверы» поддерживает серверы Keenetic и AWGM, start/stop/restart, список клиентов, handshake и трафик. Проверено по исходникам AWGM v2.19.12: GET /api/servers/all, POST /api/servers/enabled?name=, POST /api/servers/restart?name=, POST /api/managed-servers/{id}/enabled (тело {"enabled": true/false}), POST /api/managed-servers/{id}/restart. Перезапуск асинхронный: accepted означает принятие команды, завершение видно по обновлению состояния. Создание/удаление серверов, редактирование клиентов и экспорт конфигов в этой версии Mini App не реализованы.
+
+Обновление установленного бота: скачайте update.py из main репозитория и запустите /opt/bin/python3 /opt/tmp/awg-bot-update.py. Скрипт проверяет SHA-256, сохраняет резервную копию файлов, перезапускает работающий бот и восстанавливает файлы при ошибке запуска. Конфиг и маршрутизация не изменяются.
