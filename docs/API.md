@@ -32,3 +32,31 @@ POST имеет пустой JSON `{}`; id передаётся query-парам
 - https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
 
 У pumbaX разделены меню, слой вызовов awg2 и панель с initData. Здесь эти роли сохранены, транспорт и реализация написаны заново без копирования frontend. initData проверяется официальным HMAC Bot Token алгоритмом, включая все поля кроме hash (поле signature также участвует, если присутствует).
+
+
+## Серверы: проверено по AWGM v2.19.12
+
+GET /servers/all: data={servers: [], managed: [], managedStats: {WireguardN: {status, peers: []}}}. Типизированные swagger-примеры в документации частично устарели; фактический handler writeAll отдаёт managed массивом.
+
+POST /servers/enabled?name=WireguardN: {enabled: bool}; POST /servers/restart?name=WireguardN.
+GET /managed-servers/suggest-address; GET /managed-servers/policies; GET /managed-servers/lan-segments.
+POST /managed-servers: {address, mask, listenPort, description?, endpoint?, dns?, mtu?, generateAsc?}.
+PUT /managed-servers/{id}: {address, mask, listenPort, description?, endpoint?, dns?, mtu?}; DELETE /managed-servers/{id}.
+POST /managed-servers/{id}/enabled: {enabled: bool}; POST /managed-servers/{id}/restart.
+POST /managed-servers/{id}/nat and /servers/{id}/nat: {mode: full|internet-only|none}.
+POST /managed-servers/{id}/policy and /servers/{id}/policy: {policy: id|none}.
+POST /managed-servers/{id}/lan-segments: {segments: [NDMS bridge names]}; empty=[] denies LAN access.
+GET/PUT /managed-servers/{id}/asc: raw ASC JSON object.
+POST /servers/{id}/endpoint: {endpoint: host}.
+
+Both prefixes /managed-servers/{id} and /servers/{id}:
+POST /peers: {description, tunnelIP?, dns?, clientAllowedIPs?, remoteSubnets?}.
+PUT /peers/{encodedPublicKey}: same plus optional signature={profile,i1,i2,i3,i4,i5}.
+DELETE /peers/{encodedPublicKey}; POST /peers/{encodedPublicKey}/toggle: {enabled: bool}.
+GET /peers/{encodedPublicKey}/conf: data={conf: string}, contains secrets and is an explicit export only.
+
+All server IDs must be listed WireguardN; public keys must match a listed client and valid 32-byte base64, URL-encoded with slash escaped. JSON field allowlists reject arbitrary keys/paths. Mutations use the shared API lock. Optional update fields are omitted to preserve AWGM settings; a supplied empty string deliberately clears the corresponding setting.
+
+## Bot update API (our backend, not AWGM)
+
+Authenticated POST /api: bot-info (version, admin), bot-update-check, bot-update-status, bot-update-start (commit from checked release, confirmed=true). Only ADMIN_ID may call bot-update-*; whitelisted additional users receive HTTP 403. Worker downloads fixed files from the trusted repository, validates hashes/compilation, backs up existing files and rolls back, including removing newly added files if startup fails. The detached worker retains a POSIX file lock through service restart.

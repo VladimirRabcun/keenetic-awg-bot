@@ -7,3 +7,5 @@
 Покрытие: HMAC initData (включая signature), срок и будущее время, whitelist, дубли параметров, отсутствие приватных ключей в карточках, query encoding ID, start/stop/restart/connectivity, отклонение произвольной команды и неизвестного ID, запрет redirect, обработка API error, web-авторизация, запрет Telegram-групп, мониторинг изменений/отказа/восстановления, повтор доставки и сохранение выключенных уведомлений.
 
 Не проверено: физический Keenetic/Entware, реальные токены Telegram/AWGM, публичный TLS endpoint, визуальная работа Mini App в Telegram. Эти проверки требуют настроенного роутера и домена. Архивы проверены на чтение; секреты в сборку не включены.
+
+2026-10-04: 23 unittest tests: 22 passed, 1 POSIX terminal test skipped on Windows. Added CRUD validation, URL-encoded public keys, explicit secret export, admin-only update gate, manifest/path allowlist, checksum failure before stopping service, successful update and rollback including new files/config preservation. Mobile UI tested at 390×844: create server, add client, policy picker, update discovery, confirmation, progress and completion; no console errors. Physical router execution remains user-side.

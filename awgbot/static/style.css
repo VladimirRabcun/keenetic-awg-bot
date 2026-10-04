@@ -348,3 +348,10 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px soli
 .ecard .head .name-button .name { white-space: normal; }
 .data-section { margin-bottom: 10px; }
 @media (prefers-reduced-motion: reduce) { .switch::after { transition: none; } }
+/* AWGM server editing forms */
+.edit-form { display: grid; gap: 14px; }
+.edit-form label { display: grid; gap: 7px; font-size: 13px; color: var(--muted); }
+.edit-form input,.edit-form select,.edit-form textarea,.sheet textarea { box-sizing: border-box; width: 100%; min-height: 40px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); color: var(--text); padding: 10px; font: inherit; }
+.edit-form input[type=checkbox] { width: 20px; min-height: 20px; }
+.edit-form textarea,.sheet textarea { font-family: monospace; resize: vertical; }
+.sheet { max-height: 88vh; overflow-y: auto; }

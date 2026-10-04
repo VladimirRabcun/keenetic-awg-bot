@@ -87,6 +87,8 @@ class IntegrationTests(unittest.TestCase):
         threading.Thread(target=self.mock.serve_forever,daemon=True).start()
         self.c=SimpleNamespace(url=f'http://127.0.0.1:{self.mock.server_port}',key='test-key',token='test-token',allowed={7},age=3600,host='127.0.0.1',port=0)
         self.api=AWGM(self.c)
+        self.c.admin = 7
+        self.c.state = Path.cwd() / 'test-state-unused'
         self.panel=Panel(self.api,None)
 
     def tearDown(self):

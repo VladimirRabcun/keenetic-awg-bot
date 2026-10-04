@@ -235,6 +235,7 @@ const SECTIONS = [
   ['stethoscope','Диагностика','tools','проверки, отчёты'],
   ['file-text','Логи','logs','журнал AWG Manager'],
   ['bell','Мониторинг','monitor','Telegram-уведомления'],
+  ['settings','Настройки','settings','интерфейс, обновление бота'],
 ];
 const HOMES = [['cards','layout-grid','Карточки'],['compact','list','Компакт'],['icons','grid-3x3','Иконки']];
 const pref = (key, fallback) => { try { return localStorage.getItem('awg-' + key) || fallback; } catch (_) { return fallback; } };
@@ -309,7 +310,7 @@ function openSheet(title, draw) {
   const keyHandler = event => {
     if (event.key === 'Escape') { event.preventDefault(); closeSheet(); }
     if (event.key !== 'Tab') return;
-    const focusable = Array.from(box.querySelectorAll('button,a[href],input')).filter(node=>!node.disabled);
+    const focusable = Array.from(box.querySelectorAll('button,a[href],input,select,textarea')).filter(node=>!node.disabled);
     const first = focusable[0], last = focusable[focusable.length-1];
     if (event.shiftKey && document.activeElement===first) {event.preventDefault();last?.focus();}
     else if (!event.shiftKey && document.activeElement===last) {event.preventDefault();first?.focus();}
@@ -518,6 +519,8 @@ async function load() {
   else if(S.view==='logs'){const data=await api('logs');resultBody('Логи',data);}
   else if(S.view==='monitor')await renderMonitor();
   else if(S.view==='servers')await renderServers();
+  else if(S.view==='settings')renderSettings();
+  else if(S.view==='bot-update')await renderBotUpdate();
   else if(S.view==='tools')renderTools();
   else if(S.view==='result'&&S.resultLoader){S.result=await S.resultLoader();renderResult();}
   drawBar();
@@ -528,11 +531,13 @@ tg?.onEvent?.('themeChanged',()=>{if(!pref('theme','')){applyTheme(autoTheme());
 tg?.BackButton?.onClick?.(()=>go(S.view==='result'?S.returnView:'home'));
 operate(load);
 api('health').then(data=>{S.version=typeof data?.version==='string'?data.version:'';drawTop();}).catch(()=>{});
+api('bot-info').then(data=>{S.botVersion=data.version;S.admin=data.admin;if(S.view==='settings')renderSettings();}).catch(()=>{});
 setInterval(()=>{if(!document.hidden&&!S.busy&&!sheetState&&['home','tunnels','wan','servers'].includes(S.view))operate(load);},15000);
 
 async function renderServers() {
   const rows=await api('servers');
   root.replaceChildren(h('h1',{},'Серверы',pill(rows.length)));
+  root.append(btn('plus','Создать сервер',createServer,'btn-primary'));
   if(!rows.length){root.append(h('div',{class:'card empty'},'Серверов пока нет'));return;}
   for(const server of rows) {
     const peers=server.peers||[], online=peers.filter(p=>p.online===true).length;
@@ -540,17 +545,139 @@ async function renderServers() {
       h('div',{class:'head'},h('span',{class:'dot '+(server.status==='up'?'ok':'off')}),h('span',{class:'name'},server.description||server.id),pill(server.status==='up'?'работает':server.status==='down'?'остановлен':'нет данных',server.status==='up'?'ok':'')),
       h('div',{class:'meta'},tag(server.kind==='managed'?'AWGM':'Keenetic','accent'),tag(server.id),server.listenPort?tag('UDP '+server.listenPort):null),
       h('div',{class:'line'},server.address||'—'),
-      h('div',{class:'line'},'Клиенты онлайн: '+online+'/'+peers.length),
+      h('div',{class:'line'},'Клиенты онлайн: '+(!peers.length?0:peers.some(p=>typeof p.online==='boolean')?online:'—')+'/'+peers.length),
       h('div',{class:'acts'},btn('play','Старт',()=>serverAction(server,'start')),btn('square','Стоп',()=>serverAction(server,'stop'),'bad'),btn('refresh-cw','Рестарт',()=>serverAction(server,'restart'))),
     );
+    card.append(h('div',{class:'pair'},btn('settings','Настроить',()=>serverSettings(server)),btn('user-plus','Добавить клиента',()=>peerForm(server))));
     const details=h('details',{class:'card'},h('summary',{},'Клиенты · '+peers.length));
     if(!peers.length)details.append(h('p',{class:'hint'},'Клиентов пока нет'));
     for(const peer of peers)details.append(h('div',{class:'card'},h('h3',{},peer.description||'Клиент'),
       kv('Состояние',peer.online===true?'Онлайн':peer.online===false?'Офлайн':'Нет данных'),
       kv('Адрес',peer.tunnelIP||(peer.allowedIPs||[]).join(', ')||'—'),
-      kv('Получено',bytes(peer.rxBytes)),kv('Отправлено',bytes(peer.txBytes)),kv('Handshake',peer.lastHandshake||'—')));
+      kv('Получено',bytes(peer.rxBytes)),kv('Отправлено',bytes(peer.txBytes)),kv('Handshake',peer.lastHandshake||'—'),
+      h('div',{class:'pair'},btn('pencil','Изменить',()=>peerForm(server,peer)),
+        typeof peer.enabled==='boolean'?btn(peer.enabled?'pause':'play',peer.enabled?'Отключить':'Включить',()=>peerChange(server,peer,'peer-toggle',{values:{enabled:!peer.enabled}})):null),
+      h('div',{class:'pair'},peer.confAvailable!==false?btn('file-down','Конфиг',()=>peerConf(server,peer)):null,btn('trash-2','Удалить',()=>peerChange(server,peer,'peer-delete',{confirmed:true}),'bad'))));
     card.append(details);root.append(card);
   }
+}
+
+// Forms preserve AWGM values; secrets are fetched only for explicit client export.
+function formSheet(title,fields,submit,hint='') {
+  openSheet(title,box=>{
+    const form=h('form',{class:'edit-form'}),controls={};
+    for(const f of fields) {
+      let input;
+      if(f.type==='select')input=h('select',{'aria-label':f.label},f.options.map(([value,label])=>h('option',{value},label)));
+      else if(f.type==='textarea')input=h('textarea',{'aria-label':f.label,rows:5});
+      else input=h('input',{'aria-label':f.label,type:f.type||'text',required:f.required||null,min:f.min,max:f.max,step:f.step,placeholder:f.placeholder,autocomplete:'off'});
+      if(f.type==='checkbox')input.checked=Boolean(f.value);else input.value=f.value??'';
+      controls[f.key]={input,f};form.append(h('label',{},h('span',{},f.label),input));
+    }
+    const error=h('p',{class:'hint error',role:'alert'}),save=h('button',{type:'submit',class:'btn-primary'},'Сохранить');
+    if(hint)form.append(h('p',{class:'hint'},hint));
+    form.append(error,h('div',{class:'pair'},h('button',{type:'button',onclick:closeSheet},'Отмена'),save));
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();if(save.disabled)return;save.disabled=true;error.textContent='';
+      try {
+        const values={};for(const [key,{input,f}] of Object.entries(controls))values[key]=f.type==='checkbox'?input.checked:f.type==='number'?Number(input.value):input.value.trim();
+        await submit(values);closeSheet();await operate(load);
+      }catch(e){error.textContent=e.message;save.disabled=false;}
+    });box.append(form);
+  });
+}
+const SERVER_FIELDS=server=>[
+  {key:'description',label:'Название',value:server.description||''},
+  {key:'address',label:'IPv4-адрес сервера',value:server.address||'',required:true},
+  {key:'mask',label:'Маска сети',value:server.mask||'255.255.255.0',required:true},
+  {key:'listenPort',label:'UDP-порт',type:'number',value:server.listenPort||51821,min:1,max:65535,required:true},
+  {key:'endpoint',label:'Endpoint: IP или домен',value:server.endpoint||'',placeholder:'Пусто — автоматический выбор'},
+  {key:'dns',label:'DNS клиентов',value:server.dns||'',placeholder:'Пусто — DNS роутера'},
+  {key:'mtu',label:'MTU (0 — автоматически)',type:'number',value:server.mtu||0,min:0,max:9000},
+];
+async function createServer() {
+  const suggested=await api('server-suggest');
+  formSheet('Создать сервер',SERVER_FIELDS(suggested).concat({key:'generateAsc',label:'Сгенерировать ASC',type:'checkbox',value:true}),values=>api('server-create',{values}));
+}
+function serverSettings(server) {
+  const managed=server.kind==='managed';
+  openSheet('Настройки · '+(server.description||server.id),box=>box.append(h('div',{class:'card list'},
+    managed?menuItem('pencil','Параметры сервера','название, сеть, порт, DNS, MTU',()=>formSheet('Параметры сервера',SERVER_FIELDS(server),values=>api('server-edit',{id:server.id,values}))):
+      menuItem('globe','Endpoint','адрес подключения клиентов',()=>formSheet('Endpoint',[{key:'endpoint',label:'IP или домен',value:server.endpoint||''}],values=>api('server-endpoint',{id:server.id,values}))),
+    menuItem('network','NAT','доступ клиентов к сети',()=>formSheet('Режим NAT',[{key:'mode',label:'Режим',type:'select',value:server.natModeKnown===false?'':server.natMode||'',options:[['','Выберите режим'],['full','Полный NAT'],['internet-only','Только интернет'],['none','Без NAT']]}],values=>api('server-nat',{id:server.id,values}),'Изменение может повлиять на доступ подключённых клиентов.')),
+    menuItem('route','Политика доступа','выход клиентов через выбранную политику',()=>operate(async()=>{const policies=await api('server-policies');formSheet('Политика доступа',[{key:'policy',label:'Политика',type:'select',value:server.policyKnown===false?'':server.policy||'none',options:[['','Выберите политику'],['none','Без привязки'],...policies.map(p=>[p.id,p.description||p.id])]}],values=>api('server-policy',{id:server.id,values}));})),
+    managed?menuItem('network','LAN-сегменты','какие локальные сети доступны клиентам',()=>operate(()=>lanForm(server))):null,
+    managed?menuItem('shield','ASC','параметры обфускации сервера',()=>operate(()=>ascForm(server))):null,
+    managed?menuItem('trash-2','Удалить сервер','сервер и все его клиенты',()=>operate(async()=>{if(!confirm('Удалить сервер «'+(server.description||server.id)+'» и всех его клиентов? Отменить это действие нельзя.'))return;await api('server-delete',{id:server.id,confirmed:true});closeSheet();await load();})):null,
+  )));
+}
+async function lanForm(server) {
+  const lans=await api('server-lans');
+  formSheet('LAN-сегменты',lans.map(l=>({key:l.name,label:(l.label||l.name)+' · '+l.subnet,type:'checkbox',value:(server.lanSegments||[]).includes(l.name)})),values=>api('server-lan',{id:server.id,values:{segments:Object.keys(values).filter(key=>values[key])}}),'Не выбрано — доступ в LAN закрыт.'+(server.foreignAcls?.length?' На интерфейсе есть другие списки доступа: '+server.foreignAcls.join(', ')+'. Они могут разрешать больше сетей.':''));
+}
+async function ascForm(server) {
+  const params=await api('server-asc',{id:server.id});
+  formSheet('Параметры ASC',[{key:'json',label:'Параметры сервера (JSON)',type:'textarea',value:JSON.stringify(params,null,2)}],values=>api('server-asc',{id:server.id,values:JSON.parse(values.json)}),'Сохранение полностью заменяет параметры ASC. Используйте совместимые параметры на клиентах.');
+}
+function peerForm(server,peer=null) {
+  const p=peer||{};
+  const fields=[
+    {key:'description',label:'Название клиента',value:p.description||'',required:true},
+    {key:'tunnelIP',label:'IPv4-адрес клиента',value:p.tunnelIP||(p.allowedIPs||[]).find(x=>x.endsWith('/32'))||'',required:server.kind==='system'||Boolean(peer),placeholder:server.kind==='managed'?'Пусто — свободный адрес автоматически':''},
+    {key:'dns',label:'DNS',value:p.dns||''},
+    {key:'clientAllowedIPs',label:'Сети через VPN (AllowedIPs)',value:p.clientAllowedIPs||'',placeholder:'Пусто — весь трафик'},
+    {key:'remoteSubnets',label:'Сети за клиентом, через запятую',value:(p.remoteSubnets||[]).join(', ')},
+  ];
+  if(peer)fields.push({key:'editSignature',label:'Изменить сигнатуру клиента',type:'checkbox',value:false},...['profile','i1','i2','i3','i4','i5'].map(key=>({key,label:key==='profile'?'Профиль сигнатуры':key.toUpperCase(),value:key==='profile'?p.signatureProfile||'':p[key]||''})));
+  formSheet(peer?'Изменить клиента':'Добавить клиента',fields,async values=>{
+    values.remoteSubnets=values.remoteSubnets.split(',').map(x=>x.trim()).filter(Boolean);
+    if(peer){const signature={};for(const key of ['profile','i1','i2','i3','i4','i5']){signature[key]=values[key];delete values[key];}if(values.editSignature)values.signature=signature;delete values.editSignature;}
+    await api(peer?'peer-edit':'peer-add',{id:server.id,publicKey:p.publicKey,values});
+  },'Изменение сетей или DNS потребует обновить конфиг на устройстве клиента.');
+}
+async function peerChange(server,peer,op,extra) {
+  if(!confirm((op==='peer-delete'?'Удалить клиента без возможности отмены':extra.values.enabled?'Включить клиента':'Отключить клиента')+' «'+(peer.description||'Клиент')+'»?'))return;
+  await api(op,{id:server.id,publicKey:peer.publicKey,...extra});await load();
+}
+async function peerConf(server,peer) {
+  if(!confirm('Открыть конфиг клиента «'+(peer.description||'Клиент')+'»? Он содержит приватный ключ.'))return;
+  const {conf}=await api('peer-conf',{id:server.id,publicKey:peer.publicKey,confirmed:true});
+  openSheet('Конфиг клиента',box=>{
+    const text=h('textarea',{readonly:true,rows:10,'aria-label':'Конфиг клиента'});text.value=conf;
+    box.append(h('p',{class:'hint'},'Храните конфиг как пароль. Скопируйте текст или скачайте файл.'),text,
+      h('button',{class:'btn-primary',onclick:()=>{const url=URL.createObjectURL(new Blob([conf],{type:'text/plain'}));const link=h('a',{href:url,download:server.id+'-client.conf'});document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}},icon('download'),'Скачать .conf'));
+  });
+}
+function renderSettings() {
+  root.replaceChildren(h('h1',{},'Настройки'),h('div',{class:'card list'},
+    menuItem('a-large-small','Вид панели','тема, размер, вид главной',lookSheet),
+    menuItem('download','Обновление бота','установлена '+(S.botVersion||'—'),()=>go('bot-update')),
+  ));
+}
+async function renderBotUpdate(check=false) {
+  root.replaceChildren(h('h1',{},'Обновление бота'));
+  if(S.admin!==true){root.append(h('div',{class:'card'},'Установка обновлений доступна администратору бота.'));return;}
+  const card=h('div',{class:'card'});root.append(card);
+  card.append(kv('Установлена версия',S.botVersion||'—'),h('p',{class:'hint'},'Конфиг и настройки роутера сохраняются. Бот перезапустится во время установки.'),btn('refresh-cw','Проверить обновления',()=>renderBotUpdate(true)));
+  const job=await api('bot-update-status');
+  if(check)S.release=await api('bot-update-check');
+  const release=S.release;
+  if(release){card.append(kv('Последняя версия',release.latest),h('p',{},release.available?'Доступно обновление':'Установлена актуальная версия'));
+    if(release.available)card.append(btn('download','Установить обновление',async()=>{
+      if(!confirm('Установить версию '+release.latest+'? Бот временно перезапустится.'))return;
+      await api('bot-update-start',{commit:release.commit,confirmed:true});S.updatePending=true;await pollUpdate();
+    },'btn-primary'));
+  }
+  root.append(h('div',{class:'card',id:'update-job',role:'status'},job.message||'Обновление не выполняется'));
+  if(['queued','downloading','verifying','backup','stopping','installing','starting','rollback'].includes(job.phase)){S.updatePending=true;setTimeout(()=>operate(pollUpdate),2000);}
+}
+async function pollUpdate() {
+  if(S.view!=='bot-update'||!S.updatePending)return;
+  let node=document.getElementById('update-job');if(!node){node=h('div',{class:'card',id:'update-job',role:'status'});root.append(node);}
+  try{const job=await api('bot-update-status');node.textContent=job.message||job.phase;
+    if(['done','failed','idle'].includes(job.phase)){S.updatePending=false;if(job.phase==='done'){const info=await api('bot-info');S.botVersion=info.version;S.release=null;}return;}
+  }catch(_){node.textContent='Бот перезапускается. Ожидаю соединение…';}
+  setTimeout(()=>operate(pollUpdate),2000);
 }
 async function serverAction(server,action) {
   const label={start:'Включить',stop:'Остановить',restart:'Перезапустить'}[action];

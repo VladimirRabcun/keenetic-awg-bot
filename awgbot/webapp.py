@@ -4,6 +4,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from .access import validate
 from .awgm import APIError
+from .updates import Updater, status
+from .version import VERSION
 
 STATIC = Path(__file__).with_name('static')
 
@@ -30,6 +32,7 @@ class Server(ThreadingHTTPServer):
             self.slots.release()
 
 def make_server(config, panel):
+    updater = Updater(config)
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
             super().setup()
@@ -64,7 +67,7 @@ def make_server(config, panel):
                 auth = self.headers.get('Authorization', '')
                 if not auth.startswith('tma '):
                     raise PermissionError('Требуется Telegram')
-                validate(auth[4:], config.token, config.allowed, config.age)
+                uid = validate(auth[4:], config.token, config.allowed, config.age)
                 if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                     raise ValueError()
                 n = int(self.headers.get('Content-Length', '0'))
@@ -73,7 +76,22 @@ def make_server(config, panel):
                 data = json.loads(self.rfile.read(n))
                 if not isinstance(data, dict) or not isinstance(data.get('op'), str):
                     raise ValueError()
-                result = panel.dispatch(data['op'], data)
+                op = data['op']
+                if op == 'bot-info':
+                    result = {'version': VERSION, 'admin': uid == config.admin}
+                elif op.startswith('bot-update-'):
+                    if uid != config.admin:
+                        raise PermissionError('Обновления устанавливает только администратор')
+                    if op == 'bot-update-check':
+                        result = updater.check()
+                    elif op == 'bot-update-status':
+                        result = status(updater.job)
+                    elif op == 'bot-update-start' and data.get('confirmed') is True:
+                        result = updater.start(data.get('commit'))
+                    else:
+                        raise ValueError()
+                else:
+                    result = panel.dispatch(op, data)
                 self.reply(200, {'ok': True, 'data': result})
             except PermissionError as e:
                 self.reply(403, {'error': str(e)})

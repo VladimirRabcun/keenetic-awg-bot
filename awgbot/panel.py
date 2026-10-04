@@ -1,10 +1,13 @@
 from .awgm import APIError, redact
+from .servers import Servers
 
 class Panel:
     def __init__(self, api, monitor):
         self.api, self.monitor = api, monitor
 
     def dispatch(self, op, data):
+        if op.startswith('peer-') or op in ('server-create', 'server-edit', 'server-delete', 'server-nat', 'server-policy', 'server-endpoint', 'server-lan', 'server-asc', 'server-suggest', 'server-policies', 'server-lans'):
+            return Servers(self.api).dispatch(op, data)
         if op == 'health':
             return redact(self.api.call('/health'))
         if op == 'servers':
