@@ -11,7 +11,7 @@ import zipfile
 
 REPOSITORY = 'VladimirRabcun/keenetic-awg-bot'
 # Known tested application snapshot; update this when promoting a new version.
-INSTALL_COMMIT = '4b65c7e629a0563c5b6b6d254c8408520a54d62f'
+INSTALL_COMMIT = '73be3d795440f0995787c5f97885d2031e4eb223'
 
 def download(url, limit):
     request = urllib.request.Request(url, headers={'User-Agent': 'keenetic-awg-bot-installer', 'Accept': 'application/vnd.github+json'})
