@@ -219,7 +219,225 @@ SOFTWARE.
 */
 
 // Original AWG Manager logo, hoaxisr/awg-manager frontend/static/favicon.svg.
-const AWGM_LOGO = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 550 550\" preserveAspectRatio=\"xMidYMid\" class=\"awgm-logo\" aria-hidden=\"true\"><defs id=\"defs9\" /><g id=\"g103\" transform=\"matrix(1.2090726,0,0,1.2090726,-57.773414,-56.207997)\">\n    <path d=\"m 314.13069,342.61231 c -1.55,0.3125 -1.55078,1.93868 -1.30078,5.13867 0.3,5.39999 0.002,5.09922 8.10156,8.19922 2,0.7 4.49844,2.89922 5.89844,5.19922 1.6,2.59999 3.20078,3.90117 4.30078,3.70117 1.4,-0.3 1.69922,-1.60002 1.69922,-8.5 h 0.10156 v -8.20117 l -8.20117,-2.79883 c -5.94998,-2.05 -9.04961,-3.05078 -10.59961,-2.73828 z\" id=\"path31\" fill=\"#7aa1f7\" fill-opacity=\"1\" stroke=\"none\" stroke-width=\"4.223\" stroke-linecap=\"square\" stroke-opacity=\"1\" paint-order=\"fill markers stroke\" />\n    <path d=\"m 247.03108,277.04981 c -5.29998,0 -9.70117,0.40078 -9.70117,0.80078 0,1.8 8.00117,13.19882 10.70117,15.29883 2.6,1.99999 4.00002,2.30077 15.5,2.30077 6.99998,0 12.69922,-0.20078 12.69922,-0.30077 v 0 c 0.10096,-0.71602 -4.49883,-4.39923 -9.79883,-9.19923 l -9.80078,-8.90039 z\" id=\"path30\" fill=\"#7aa1f7\" fill-opacity=\"1\" stroke=\"none\" stroke-width=\"4.223\" stroke-linecap=\"square\" stroke-opacity=\"1\" paint-order=\"fill markers stroke\" />\n    \n    \n    \n    <path d=\"m 275.32991,63.250975 53.40039,19.39844 c 76.89984,27.899945 111.19961,40.500395 115.59961,42.400395 l 3.80078,1.59961 v 13.10156 c 0,19.29996 -1.79961,60.69926 -3.59961,81.69922 -5.89998,69.19986 -21.20123,122.19968 -45.70117,158.59961 -16.19997,23.79995 -39.39889,47.90121 -65.79883,67.70117 -19.89996,14.79997 -54.7,37.2 -58,37 -0.7,0 -7.80119,-4.0004 -15.70117,-8.90039 v -0.0996 c -22.19996,-13.89998 -35.29846,-22.90042 -48.89844,-33.9004 -14.49996,-11.79998 -34.40119,-31.00002 -43.70117,-42.5 l -6.40039,-8.09961 1.20117,-6.20117 c 0.7,-3.4 2.00039,-9.29962 2.90039,-13.09961 l 1.5,-6.90039 9.69922,-6.29883 9.69922,-6.40039 5.30078,2.90039 c 20.69996,11.39997 93,47.69922 95,47.69922 1.8,-0.1 27.39963,-7.30079 34.59961,-9.80078 0.9,-0.3 3.40078,1.00156 5.80078,3.10156 2.3,2 4.59961,3.69961 5.09961,3.59961 0.4,0 6.80002,-8.39963 14,-18.59961 l 13.19922,-18.60156 -0.59961,-15.79883 -0.59961,-15.80078 7.80078,-8.79883 c 25.99996,-29.59994 41.29845,-63.30047 47.39844,-104.40039 1.9,-13.39998 3.90078,-43.09961 2.80078,-43.09961 -0.3,0 -2.40039,3.10001 -4.40039,7 -10.09998,18.29996 -21.29924,36.39924 -27.69922,44.69922 -7.99998,10.29998 -21.30041,23.19962 -29.90039,29.09961 -8.29998,5.59998 -24.69922,13.70117 -24.69922,12.20117 0,-0.7 0.7,-4.60001 1.5,-8.5 1.4,-6.99998 2.29844,-42.5 0.89844,-42.5 -0.3,0 -6.19924,4.30001 -13.19922,9.5 -14.59…4977 tokens truncated…3e ${rows.length} · не запущены ${rows.length-on.length}`,()=>go('tunnels')],
+const AWGM_LOGO = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 550 550\" preserveAspectRatio=\"xMidYMid\" class=\"awgm-logo\" aria-hidden=\"true\"><defs id=\"defs9\" /><g id=\"g103\" transform=\"matrix(1.2090726,0,0,1.2090726,-57.773414,-56.207997)\">\n    <path d=\"m 314.13069,342.61231 c -1.55,0.3125 -1.55078,1.93868 -1.30078,5.13867 0.3,5.39999 0.002,5.09922 8.10156,8.19922 2,0.7 4.49844,2.89922 5.89844,5.19922 1.6,2.59999 3.20078,3.90117 4.30078,3.70117 1.4,-0.3 1.69922,-1.60002 1.69922,-8.5 h 0.10156 v -8.20117 l -8.20117,-2.79883 c -5.94998,-2.05 -9.04961,-3.05078 -10.59961,-2.73828 z\" id=\"path31\" fill=\"#7aa1f7\" fill-opacity=\"1\" stroke=\"none\" stroke-width=\"4.223\" stroke-linecap=\"square\" stroke-opacity=\"1\" paint-order=\"fill markers stroke\" />\n    <path d=\"m 247.03108,277.04981 c -5.29998,0 -9.70117,0.40078 -9.70117,0.80078 0,1.8 8.00117,13.19882 10.70117,15.29883 2.6,1.99999 4.00002,2.30077 15.5,2.30077 6.99998,0 12.69922,-0.20078 12.69922,-0.30077 v 0 c 0.10096,-0.71602 -4.49883,-4.39923 -9.79883,-9.19923 l -9.80078,-8.90039 z\" id=\"path30\" fill=\"#7aa1f7\" fill-opacity=\"1\" stroke=\"none\" stroke-width=\"4.223\" stroke-linecap=\"square\" stroke-opacity=\"1\" paint-order=\"fill markers stroke\" />\n    \n    \n    \n    <path d=\"m 275.32991,63.250975 53.40039,19.39844 c 76.89984,27.899945 111.19961,40.500395 115.59961,42.400395 l 3.80078,1.59961 v 13.10156 c 0,19.29996 -1.79961,60.69926 -3.59961,81.69922 -5.89998,69.19986 -21.20123,122.19968 -45.70117,158.59961 -16.19997,23.79995 -39.39889,47.90121 -65.79883,67.70117 -19.89996,14.79997 -54.7,37.2 -58,37 -0.7,0 -7.80119,-4.0004 -15.70117,-8.90039 v -0.0996 c -22.19996,-13.89998 -35.29846,-22.90042 -48.89844,-33.9004 -14.49996,-11.79998 -34.40119,-31.00002 -43.70117,-42.5 l -6.40039,-8.09961 1.20117,-6.20117 c 0.7,-3.4 2.00039,-9.29962 2.90039,-13.09961 l 1.5,-6.90039 9.69922,-6.29883 9.69922,-6.40039 5.30078,2.90039 c 20.69996,11.39997 93,47.69922 95,47.69922 1.8,-0.1 27.39963,-7.30079 34.59961,-9.80078 0.9,-0.3 3.40078,1.00156 5.80078,3.10156 2.3,2 4.59961,3.69961 5.09961,3.59961 0.4,0 6.80002,-8.39963 14,-18.59961 l 13.19922,-18.60156 -0.59961,-15.79883 -0.59961,-15.80078 7.80078,-8.79883 c 25.99996,-29.59994 41.29845,-63.30047 47.39844,-104.40039 1.9,-13.39998 3.90078,-43.09961 2.80078,-43.09961 -0.3,0 -2.40039,3.10001 -4.40039,7 -10.09998,18.29996 -21.29924,36.39924 -27.69922,44.69922 -7.99998,10.29998 -21.30041,23.19962 -29.90039,29.09961 -8.29998,5.59998 -24.69922,13.70117 -24.69922,12.20117 0,-0.7 0.7,-4.60001 1.5,-8.5 1.4,-6.99998 2.29844,-42.5 0.89844,-42.5 -0.3,0 -6.19924,4.30001 -13.19922,9.5 -14.59997,10.89998 -28.80078,18.69883 -32.30078,17.79883 -3.7,-0.9 -15.19844,-10.69883 -16.39844,-13.79883 -0.6,-1.5 -3.60078,-11.50002 -6.80078,-22 l -5.59961,-19.20117 5.09961,-5.40039 c 2.8,-3 5.99922,-7.19844 7.19922,-9.39844 2.8,-5.29999 5.30078,-18.10158 5.30078,-26.10156 0,-8.49999 -2.09922,-24.69883 -3.19922,-24.29883 -1,0.4 -13.20041,9.79963 -26.40039,20.59961 -5.29998,4.29999 -10.00078,7.90039 -10.30078,7.90039 -0.3,0 -1.20039,-2.90079 -1.90039,-6.30078 -1.4,-7.09999 -7.79883,-21.10041 -11.79883,-25.90039 l -2.5,-3.09961 -4.90039,2.59961 c -6.19998,3.39999 -20.3,16.50157 -23.5,22.10156 -1.4,2.5 -3.19922,4.5 -3.69922,4.5 -0.6,0 -11.20002,-4.60119 -23.5,-10.20117 l -22.7595,-5.53077 -17.94167,4.53077 c -10.09998,5.09998 -18.60039,9.20117 -18.90039,9.20117 -0.3,0 -0.5,-4.0004 -0.5,-8.90039 v -9 l 6.40039,-2.40039 c 3.5,-1.3 42.40008,-15.50004 86.5,-31.500005 z\" id=\"path26\" fill=\"#7aa1f7\" fill-opacity=\"1\" stroke=\"#7aa1f7\" stroke-width=\"4.223\" stroke-linecap=\"square\" stroke-opacity=\"1\" paint-order=\"fill markers stroke\" />\n    </g></svg>";
+
+'use strict';
+// Layout and appearance controls adapted from AWG Toolza (MIT).
+// API calls stay within the authenticated AWG Manager bot API.
+const tg = window.Telegram?.WebApp;
+const root = document.getElementById('app');
+const S = {view:'home', tunnels:[], busy:false, query:'', filter:'all', result:null, resultTitle:'', resultLoader:null, returnView:'home', updated:''};
+const SECTIONS = [
+  ['network','Туннели','tunnels','профили, управление VPN'],
+  ['globe','WAN','wan','внешние подключения'],
+  ['server','Система','system','версия, время работы'],
+  ['stethoscope','Диагностика','tools','проверки, отчёты'],
+  ['file-text','Логи','logs','журнал AWG Manager'],
+  ['bell','Мониторинг','monitor','Telegram-уведомления'],
+];
+const HOMES = [['cards','layout-grid','Карточки'],['compact','list','Компакт'],['icons','grid-3x3','Иконки']];
+const pref = (key, fallback) => { try { return localStorage.getItem('awg-' + key) || fallback; } catch (_) { return fallback; } };
+const setPref = (key, value) => { try { localStorage.setItem('awg-' + key, value); } catch (_) {} };
+const autoTheme = () => tg?.colorScheme === 'dark' ? 'dark' : 'light';
+const homePref = () => HOMES.some(([key]) => key === pref('home','')) ? pref('home','') : 'cards';
+const scalePref = () => Math.min(130,Math.max(75,Number(pref('scale','100')) || 100));
+function h(tag, props, ...kids) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(props || {})) {
+    if (value === null || value === undefined || value === false) continue;
+    if (key === 'class') node.className = value;
+    else if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
+    else node.setAttribute(key, value === true ? '' : value);
+  }
+  for (const child of kids.flat(Infinity)) if (child !== null && child !== undefined && child !== false) node.append(child instanceof Node ? child : String(child));
+  return node;
+}
+function icon(name) {
+  const template = document.createElement('template');
+  // Only bundled SVG constants enter HTML. API values always use text nodes.
+  template.innerHTML = `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ICONS.info || ''}</svg>`;
+  return template.content.firstChild;
+}
+function logo() {
+  const template = document.createElement('template'); template.innerHTML = AWGM_LOGO;
+  return template.content.firstChild;
+}
+const pill = (text, cls='') => h('span',{class:'pill ' + cls},text);
+const tag = (text, cls='') => h('span',{class:'tag ' + cls},text);
+const kv = (key,value) => h('div',{class:'kv'},h('span',{},key),h('span',{},value));
+function btn(ic, text, fn, cls='', attrs={}) {
+  return h('button',{type:'button',class:cls,onclick:()=>operate(fn),...attrs},ic ? icon(ic) : null,text);
+}
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const css = getComputedStyle(document.documentElement);
+  try { tg?.setHeaderColor?.(css.getPropertyValue('--card').trim()); tg?.setBackgroundColor?.(css.getPropertyValue('--bg').trim()); } catch (_) {}
+}
+function applyLook() {
+  document.documentElement.style.zoom = scalePref() === 100 ? '' : String(scalePref()/100);
+  document.documentElement.dataset.weight = ['light','normal','bold'].includes(pref('weight','normal')) ? pref('weight','normal') : 'normal';
+}
+function drawTop() {
+  const dark = document.documentElement.dataset.theme === 'dark';
+  document.getElementById('top').replaceChildren(
+    h('button',{class:'logo','aria-label':'Главная',title:'Главная',onclick:()=>go('home')},logo()),
+    h('button',{class:'ver',onclick:()=>go('home'),'aria-label':'AWG Manager · главная'},h('b',{},'AWG Manager'),h('span',{},'Keenetic')),
+    h('div',{class:'sp'}),
+    h('button',{'aria-label':'Вид панели',title:'Вид панели',onclick:lookSheet},icon('a-large-small')),
+    h('button',{'aria-label':'День / ночь',title:dark?'Светлая тема':'Тёмная тема',onclick:()=>{const next=dark?'light':'dark';setPref('theme',next);applyTheme(next);drawTop();}},icon(dark?'sun':'moon')),
+    h('button',{'aria-label':'О проекте',title:'О проекте',onclick:aboutSheet},icon('heart')),
+    h('button',{'aria-label':'Меню',title:'Разделы',onclick:menuSheet},icon('menu')),
+  );
+}
+let sheetState = null;
+function closeSheet() {
+  if (!sheetState) return;
+  const previous = sheetState; sheetState = null;
+  document.removeEventListener('keydown',previous.keyHandler);
+  previous.background.remove();
+  root.inert = false; document.getElementById('top').inert = false; document.getElementById('bar').inert = false;
+  if (previous.trigger?.isConnected) previous.trigger.focus();
+}
+function openSheet(title, draw) {
+  closeSheet();
+  const trigger = document.activeElement;
+  const box = h('section',{class:'sheet',role:'dialog','aria-modal':'true','aria-label':title});
+  const background = h('div',{class:'sheet-bg',onclick:event=>{if(event.target===background)closeSheet();}},box);
+  const content = h('div',{});
+  box.append(h('div',{class:'sheet-head'},h('h3',{},title),h('button',{'aria-label':'Закрыть',onclick:closeSheet},icon('x'))),content);
+  const keyHandler = event => {
+    if (event.key === 'Escape') { event.preventDefault(); closeSheet(); }
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(box.querySelectorAll('button,a[href],input')).filter(node=>!node.disabled);
+    const first = focusable[0], last = focusable[focusable.length-1];
+    if (event.shiftKey && document.activeElement===first) {event.preventDefault();last?.focus();}
+    else if (!event.shiftKey && document.activeElement===last) {event.preventDefault();first?.focus();}
+  };
+  sheetState = {background,keyHandler,trigger};
+  draw(content);
+  root.inert = true; document.getElementById('top').inert = true; document.getElementById('bar').inert = true;
+  document.body.append(background); document.addEventListener('keydown',keyHandler);
+  box.querySelector('button')?.focus();
+}
+function segText(items, current, select) {
+  return h('div',{class:'seg'},items.map(([key,label])=>h('button',{class:key===current?'on':null,'aria-pressed':String(key===current),onclick:()=>select(key)},label)));
+}
+function segBar(items, current, select) {
+  return h('div',{class:'seg'},items.map(([key,ic,label])=>h('button',{class:key===current?'on':null,'aria-label':label,title:label,'aria-pressed':String(key===current),onclick:()=>select(key)},icon(ic))));
+}
+function setHome(value) { setPref('home',value); if(S.view==='home')renderHome(); }
+function lookSheet() {
+  openSheet('Вид панели',box=>{
+    const draw = () => {
+      const scale = scalePref();
+      const size = h('label',{for:'look-scale'},`Размер — ${scale}%`);
+      const range = h('input',{id:'look-scale',type:'range',min:75,max:130,step:5,value:scale,
+        oninput:event=>{size.textContent=`Размер — ${event.target.value}%`;},
+        onchange:event=>{setPref('scale',event.target.value);applyLook();}});
+      box.replaceChildren(
+        h('label',{},'Тема'),
+        segText([['','Авто'],['light','Светлая'],['dark','Тёмная']],pref('theme',''),value=>{setPref('theme',value);applyTheme(value||autoTheme());drawTop();draw();}),
+        size,range,h('div',{class:'row small muted scale-marks'},h('span',{},'75%'),h('span',{},'100%'),h('span',{},'130%')),
+        h('label',{},'Жирность шрифта'),
+        segText([['light','Тоньше'],['normal','Обычная'],['bold','Жирнее']],pref('weight','normal'),value=>{setPref('weight',value);applyLook();draw();}),
+        h('label',{},'Главная'),segText(HOMES.map(([key,,label])=>[key,label]),homePref(),value=>{setHome(value);draw();}),
+        h('p',{class:'hint'},'«Авто» — как тема Telegram. Настройки запоминаются на этом устройстве.'),
+        h('div',{class:'pair'},h('button',{onclick:()=>{['theme','scale','weight','home'].forEach(key=>setPref(key,''));applyTheme(autoTheme());applyLook();drawTop();if(S.view==='home')renderHome();draw();}},'Сбросить'),h('button',{class:'btn-primary',onclick:closeSheet},'Готово')),
+      );
+    }; draw();
+  });
+}
+function menuItem(ic,label,sub,fn) {
+  return h('button',{class:'item',onclick:fn},h('span',{class:'ibox'},icon(ic)),h('span',{class:'main'},h('span',{class:'title'},label),sub?h('span',{class:'sub wrap'},sub):null),h('span',{class:'side'},icon('chevron-right')));
+}
+function menuSheet() {
+  openSheet('Разделы',box=>box.append(
+    h('div',{class:'card list'},
+      menuItem('house','Главная','сводка и разделы',()=>go('home')),
+      SECTIONS.map(([ic,title,path,sub])=>menuItem(ic,title,sub,()=>go(path))),
+    ),
+    h('button',{onclick:()=>{closeSheet();operate(load);}},icon('refresh-cw'),'Обновить данные'),
+    h('button',{onclick:lookSheet},icon('a-large-small'),'Вид панели'),
+    h('button',{class:'close-sheet',onclick:()=>{closeSheet();tg?.close?.();}},icon('message-square-text'),'Вернуться в Telegram'),
+  ));
+}
+function aboutSheet() {
+  openSheet('О проекте',box=>box.append(
+    h('p',{class:'hint'},'Telegram-панель AWG Manager для Keenetic. Интерфейс AWG Toolza адаптирован под API роутера.'),
+    h('a',{class:'btn btn-block',href:'https://github.com/VladimirRabcun/keenetic-awg-bot',target:'_blank',rel:'noopener noreferrer'},icon('code'),'Наш проект'),
+    h('a',{class:'btn btn-block',href:'https://github.com/pumbaX/awg-multi-script',target:'_blank',rel:'noopener noreferrer'},icon('heart'),'AWG Toolza · pumbaX'),
+    h('a',{class:'btn btn-block',href:'https://github.com/hoaxisr/awg-manager',target:'_blank',rel:'noopener noreferrer'},icon('heart'),'AWG Manager · hoaxisr'),
+  ));
+}
+async function api(op,data={}) {
+  if (!tg?.initData) throw Error('Откройте Mini App кнопкой «Панель» в Telegram-боте');
+  const response = await fetch('/api',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'tma '+tg.initData},body:JSON.stringify({op,...data})});
+  const value = await response.json();
+  if (!response.ok) throw Error(value.error||'Ошибка запроса');
+  return value.data;
+}
+function connection(error='') {
+  let node=document.getElementById('connection');
+  if(!node){node=h('p',{id:'connection',role:'status','aria-live':'polite'});root.append(node);}
+  node.textContent=error || (S.busy?'Обновление…':S.updated?'Обновлено '+S.updated+' · каждые 15 с':'');
+  node.classList.toggle('error',Boolean(error));
+}
+async function operate(fn) {
+  if(S.busy)return;
+  S.busy=true;root.setAttribute('aria-busy','true');
+  document.querySelectorAll('#app button,#bar button').forEach(node=>node.disabled=true);connection();
+  let error='';
+  try {await fn();S.updated=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});}
+  catch(e){error=e.message;if(!root.querySelector('.card,.ecard,.sgrid,.grid,.search,h1'))root.replaceChildren(h('div',{class:'card empty'},h('b',{},'Не удалось подключиться'),h('span',{},error),btn('refresh-cw','Повторить',load)));}
+  finally{S.busy=false;root.setAttribute('aria-busy','false');document.querySelectorAll('#app button,#bar button').forEach(node=>node.disabled=false);connection(error);}
+}
+function drawBar() {
+  const sub=S.view!=='home';document.body.classList.toggle('has-bar',sub);
+  document.getElementById('bar').replaceChildren(...(sub?[h('div',{class:'bar'},btn('arrow-left','Назад',()=>navigate(S.view==='result'?S.returnView:'home')),btn('refresh-cw','Обновить',load))]:[]));
+  if(sub)tg?.BackButton?.show?.();else tg?.BackButton?.hide?.();
+}
+async function navigate(view) {S.view=view;root.replaceChildren(h('div',{class:'spin'},'Загрузка…'));drawBar();await load();window.scrollTo(0,0);}
+function go(view) {if(S.busy)return;closeSheet();operate(()=>navigate(view));}
+function amount(tunnel) {
+  const rx=Number(tunnel.rxBytes),tx=Number(tunnel.txBytes);
+  if(tunnel.rxBytes==null || tunnel.txBytes==null || !Number.isFinite(rx) || !Number.isFinite(tx))return null;
+  return rx+tx;
+}
+function bytes(value) {
+  if(value===null||value===undefined||value==='')return '—';
+  const n=Number(value);if(!Number.isFinite(n)||n<0)return '—';
+  const units=['Б','КБ','МБ','ГБ','ТБ'];const i=n===0?0:Math.max(0,Math.min(4,Math.floor(Math.log(n)/Math.log(1024))));
+  return (n/1024**i).toLocaleString('ru-RU',{maximumFractionDigits:i?1:0})+' '+units[i];
+}
+const states={running:'работает',stopped:'остановлен',starting:'запускается',stopping:'останавливается',error:'ошибка',unknown:'нет данных'};
+function state(tunnel) {return tunnel.status==='running'?'on':tunnel.status==='error'?'bad':'';}
+function tunnelCard(tunnel,acts=true) {
+  const on=tunnel.status==='running';
+  const name=tunnel.name||tunnel.id;
+  return h('article',{class:'ecard '+state(tunnel)},
+    h('div',{class:'head'},h('span',{class:'dot '+state(tunnel)}),h('button',{class:'name-button',onclick:()=>operate(()=>openResult(name,()=>api('tunnel',{id:tunnel.id})))},h('span',{class:'name'},name)),pill(states[tunnel.status]||tunnel.status||'нет данных',on?'ok':state(tunnel))),
+    h('div',{class:'meta'},tag(tunnel.type||'VPN','accent'),tunnel.backend?tag(tunnel.backend):null,tunnel.pingCheck?.status?tag('Ping: '+tunnel.pingCheck.status):null),
+    h('div',{class:'line'},'↓ '+bytes(tunnel.rxBytes)+' · ↑ '+bytes(tunnel.txBytes)),
+    h('div',{class:'line'},'WAN: '+(tunnel.resolvedIspInterfaceLabel||tunnel.ispInterfaceLabel||'—')),
+    acts?h('div',{class:'acts'},btn(on?'square':'play',on?'Стоп':'Старт',()=>tunnelAction(tunnel,on?'stop':'start'),on?'bad':''),btn('refresh-cw','Рестарт',()=>tunnelAction(tunnel,'restart')),btn('stethoscope','Проверка',()=>tunnelAction(tunnel,'connectivity'))):null,
+  );
+}
+async function tunnelAction(tunnel,action) {
+  if(['stop','restart'].includes(action)&&!confirm((action==='stop'?'Остановить':'Перезапустить')+' туннель «'+(tunnel.name||tunnel.id)+'»?'))return;
+  const result=await api('action',{id:tunnel.id,action});
+  if(action==='connectivity') {
+    S.returnView=S.view;S.view='result';S.result=result;S.resultTitle='Проверка · '+(tunnel.name||tunnel.id);S.resultLoader=()=>api('action',{id:tunnel.id,action:'connectivity'});renderResult();drawBar();
+  } else await load();
+}
+function homeCells() {
+  const rows=S.tunnels,on=rows.filter(t=>t.status==='running');
+  const measured=rows.filter(t=>amount(t)!==null);
+  const rx=measured.reduce((total,t)=>total+Number(t.rxBytes),0),tx=measured.reduce((total,t)=>total+Number(t.txBytes),0);
+  const traffic=measured.length?bytes(rx+tx):'—';
+  const leader=measured.slice().sort((a,b)=>amount(b)-amount(a))[0];
+  const wan=[...new Set(on.map(t=>t.resolvedIspInterfaceLabel||t.ispInterfaceLabel).filter(Boolean))].join(', ')||'—';
+  return [
+    [`${on.length}/${rows.length}`,'Туннели работают',`всего ${rows.length} · не запущены ${rows.length-on.length}`,()=>go('tunnels')],
     [traffic,'Суммарный обмен',measured.length?'↓ '+bytes(rx)+' · ↑ '+bytes(tx)+(measured.length<rows.length?' · часть данных':''):'нет данных'],
     [wan,'WAN туннелей','по запущенным профилям',()=>go('wan')],
     [leader?(leader.name||leader.id):'—','Лидер по трафику',leader?bytes(amount(leader)):'нет данных',leader?()=>operate(()=>openResult(leader.name||leader.id,()=>api('tunnel',{id:leader.id}))):null],
