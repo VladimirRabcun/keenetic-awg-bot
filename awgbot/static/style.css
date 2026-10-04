@@ -410,3 +410,21 @@ html[data-theme=dark] .server-main { --server-panel:#24283d; --accent:#86a9f9; -
 .server-main button.switch::after { width:16px; height:16px; top:3px; left:3px; background:#c4c8e7; opacity:1; }
 .server-main button.switch.on { background:#86a9f9; }
 .server-main button.switch.on::after { left:19px; background:#f4f4f6; }
+
+/* Manager settings, routing and local QR. */
+.client-qr{display:block;max-width:100%;height:auto;margin:10px auto 20px;image-rendering:pixelated;background:#fff;border-radius:8px;}
+.settings-group summary{cursor:pointer;font-size:15px;font-weight:700;padding:4px 0;}
+.settings-group form{margin-top:15px;}
+.setting-field{display:flex;flex-direction:column;gap:7px;margin:12px 0;color:var(--text);font-size:12px;}
+.setting-field input:not([type=checkbox]),.setting-field textarea,.setting-field select,.routing-tabs+input{width:100%;box-sizing:border-box;min-height:38px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);padding:8px;font:inherit;}
+.setting-field input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);}
+.settings-group fieldset{border:1px solid var(--border);border-radius:8px;margin:12px 0;min-width:0;}
+.routing-tabs{display:flex;gap:6px;overflow-x:auto;padding:0 0 12px;margin-bottom:12px;}
+.routing-tabs button{white-space:nowrap;flex-shrink:0;}
+.routing-tabs button.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+.route-card .row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.route-card .switch{padding:0;min-width:46px;}
+.warning{border-left:4px solid #e8b767;background:color-mix(in srgb,#e8b767 12%,var(--card));}
+
+button.switch{min-width:46px;min-height:28px;padding:0;}
+.routing-tabs{scrollbar-width:none;}.routing-tabs::-webkit-scrollbar{display:none;}

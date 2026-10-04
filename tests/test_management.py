@@ -78,7 +78,7 @@ class ManagementTests(unittest.TestCase):
                     req = Request(f'http://127.0.0.1:{server.server_port}/api', json.dumps(data).encode(), {'Content-Type': 'application/json', 'Authorization': 'tma '+signed(uid=uid)})
                     return urlopen(req)
                 try:
-                    for op in ('bot-update-check', 'bot-update-start', 'bot-update-status', 'server-export', 'server-import'):
+                    for op in ('bot-update-check', 'bot-update-start', 'bot-update-status', 'server-export', 'server-import', 'manager-settings', 'manager-save', 'routing-read', 'routing-write'):
                         with self.assertRaises(HTTPError) as error: request(8, {'op': op, 'confirmed': True})
                         self.assertEqual(error.exception.code, 403)
                     with self.assertRaises(HTTPError) as error: request(7, {'op': 'bot-update-start', 'commit': 'x'})

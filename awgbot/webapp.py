@@ -77,10 +77,10 @@ def make_server(config, panel):
                 if not isinstance(data, dict) or not isinstance(data.get('op'), str):
                     raise ValueError()
                 op = data['op']
-                if n > 8192 and op != 'server-import':
+                if n > 8192 and op not in ('server-import','manager-save','routing-write'):
                     raise ValueError()
-                if op in ('server-export', 'server-import') and uid != config.admin:
-                    raise PermissionError('Резервные копии доступны только администратору')
+                if (op.startswith(('manager-', 'routing-')) or op in ('server-export', 'server-import')) and uid != config.admin:
+                    raise PermissionError('Настройки, маршрутизация и резервные копии доступны только администратору')
                 if op == 'bot-info':
                     result = {'version': VERSION, 'admin': uid == config.admin}
                 elif op.startswith('bot-update-'):

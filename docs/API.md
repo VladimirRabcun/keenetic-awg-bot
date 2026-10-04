@@ -66,3 +66,15 @@ Authenticated POST /api: bot-info (version, admin), bot-update-check, bot-update
 GET `/api/managed/export` возвращает backup типа `awg-manager-managed-server-backup`, version 1, managedServers. POST `/api/managed/import` принимает тот же type/version/managedServers и options.allowRenumber; outcomes описывает частичные результаты. Доступ из Mini App ограничен ADMIN_ID и явным подтверждением.
 
 GET/PUT `/api/singbox/router/settings`: меняется только выбранная запись ingressInterfaces (`managed:WireguardN` или `iface:WireguardN`), остальные значения сохраняются. Это общие настройки маршрутизатора; операции сериализованы клиентом API.
+
+### Настройки и маршрутизация 0.6.0
+
+Проверено по исходникам AWGM tag v2.19.12: `internal/api/settings.go`, `routing.go`, `dnsroute.go`, `staticroute.go`, `clientroutes.go`, `accesspolicy.go`, `hydraroute.go`, `singbox_router_dto.go`; методы — `frontend/src/lib/api/clientRouting.ts`, `clientSbRouter.ts`, регистрация — `internal/server/server_routes.go`.
+
+GET `/settings/get`, POST `/settings/update` имеют patch semantics. Отдельно POST `/settings/obfuscator-relay` с `{process:bool}`. HTTP bind и ротация ключа не реализуются через общий patch. API-ключ редактирования не возвращается Mini App.
+
+GET `/routing/{dns-routes,static-routes,client-routes,access-policies,policy-interfaces,tunnels}`. DNS `/dns-routes/{create,update,delete,set-enabled,refresh}` POST, query id для существующего. IP `/static-routes/{create,update,delete,set-enabled}` POST, id при update в теле. VPN `/client-routes/{create,update,delete,toggle}` POST, query id. DNS fallback auto/reject/empty, IP reject/empty, VPN drop/bypass.
+
+Sing-box GET `/singbox/router/rules/list`, POST rules/add, rules/update `{index,rule}`, rules/delete `{index}`. Индекс перед изменением сверяется с ожидаемым полным правилом; awgm_managed не редактируется. Rulesets соответствуют add/update `{tag,ruleSet}`/delete `{tag}`. Mode меняется POST `/singbox/router/mode` с mode; настройки GET/PUT `/singbox/router/settings`, enabled/routingMode не меняются общей формой.
+
+QR использует существующие GET `/servers/{id}/peers/{publicKey}/conf` или `/managed-servers/{id}/peers/{publicKey}/conf`, возвращающие `{conf:string}`. Отдельный endpoint картинки QR не нужен.
